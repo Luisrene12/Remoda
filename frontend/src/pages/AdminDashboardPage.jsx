@@ -953,8 +953,8 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
               {activeTab === 'pedidos' && 'Pedidos E-Commerce'}
               {activeTab === 'recolecciones' && 'Recolecciones de Ropa Usada'}
               {activeTab === 'cupones' && 'Cupones de Descuento & Promociones'}
-              {activeTab === 'usuarios' && 'Usuarios'}
-              {activeTab === 'reportes' && 'Reporte de Impacto Ambiental'}
+              {activeTab === 'usuarios' && 'Gestión de Usuarios'}
+              {activeTab === 'reportes' && 'Centro de Reportes y Estadísticas por Mes'}
               {activeTab === 'configuracion' && 'Configuración del Sistema'}
             </h1>
             <p className="text-xs text-[#7A746B] mt-1">
@@ -976,6 +976,40 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
               <span>Sincronizar</span>
             </button>
           </div>
+        </div>
+
+        {/* Quick Horizontal Tab Bar for Easy Switching on All Screens */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {[
+            { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+            { id: 'reportes', label: '📈 Reportes por Mes', emoji: '📈', highlight: true },
+            { id: 'productos', label: 'Productos', emoji: '👕' },
+            { id: 'vendidos', label: 'Vendidos', emoji: '🏷️' },
+            { id: 'pedidos', label: 'Pedidos', emoji: '📦' },
+            { id: 'categorias', label: 'Categorías', emoji: '🗂️' },
+            { id: 'usuarios', label: 'Usuarios', emoji: '👥' },
+            { id: 'recolecciones', label: 'Recolecciones', emoji: '♻️' },
+            { id: 'cupones', label: 'Cupones', emoji: '🎫' },
+            { id: 'configuracion', label: 'Configuración', emoji: '⚙️' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-[#1E5128] text-white shadow-md shadow-[#1E5128]/25 scale-105'
+                    : tab.highlight
+                    ? 'bg-emerald-50 text-[#1E5128] border border-emerald-300 hover:bg-emerald-100 font-extrabold'
+                    : 'bg-white text-[#5A544C] border border-[#E8E1D5] hover:bg-[#F4EFE6] hover:text-[#1C1C1C]'
+                }`}
+              >
+                <span>{tab.emoji}</span>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* 1. DASHBOARD OVERVIEW WITH RECHARTS GRAPHS */}
@@ -2063,531 +2097,245 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
         </div>
       )}
 
-      {/* 9. COMPREHENSIVE REPORTS & ANALYTICS WITH MONTH FILTER */}
+      {/* 9. REPORTE FINANCIERO Y VENTAS POR MES (FOCUSED & CLEAN) */}
       {activeTab === 'reportes' && (
         <div className="space-y-6 animate-fade-in">
           
-          {/* Header Banner with Gradient & Dynamic Period Label */}
-          <div className="relative bg-gradient-to-br from-[#132316] via-[#1E5128] to-[#0A120B] rounded-3xl p-6 sm:p-8 text-white overflow-hidden shadow-2xl border border-emerald-900/40">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
-            <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-[#C85A2A]/10 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-white/10 backdrop-blur-md border border-white/20 text-emerald-200">
-                  <BarChart3 className="w-4 h-4 text-emerald-300" />
-                  <span>CENTRO DE REPORTES GERENCIALES</span>
-                </div>
-                <h2 className="text-2xl sm:text-4xl font-bold font-serif-remoda tracking-tight">
-                  Reporte de Desempeño · <span className="text-emerald-300">{filteredReportData.currentMonthLabel}</span>
-                </h2>
-                <p className="text-xs sm:text-sm text-emerald-100/80 max-w-2xl">
-                  Análisis consolidado en tiempo real de facturación, volumen de pedidos, prendas vendidas e impacto ambiental con selector por mes.
-                </p>
+          {/* Header Bar */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E8E1D5] shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-[#1E5128] border border-emerald-200 mb-2">
+                <FileText className="w-3.5 h-3.5" />
+                <span>REPORTE DE VENTAS Y FACTURACIÓN</span>
               </div>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif-remoda text-[#1C1C1C]">
+                Reporte Mensual · <span className="text-[#1E5128]">{filteredReportData.currentMonthLabel}</span>
+              </h2>
+              <p className="text-xs text-[#7A746B] mt-1">
+                Consulta y filtra los montos de dinero recaudados y el desglose de ventas por mes.
+              </p>
+            </div>
 
-              {/* Print / Export Action */}
-              <div className="flex items-center gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-all flex items-center gap-2 backdrop-blur-md cursor-pointer hover:scale-105 active:scale-95 shadow-md"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Imprimir / PDF</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => showToast(`Reporte de ${filteredReportData.currentMonthLabel} exportado exitosamente`)}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#C85A2A] to-amber-600 hover:from-[#B04D22] hover:to-amber-700 text-white text-xs font-extrabold transition-all flex items-center gap-2 shadow-lg shadow-[#C85A2A]/30 cursor-pointer hover:scale-105 active:scale-95"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Exportar CSV</span>
-                </button>
-              </div>
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2.5 rounded-2xl bg-[#F4EFE6] hover:bg-[#EAE3D5] text-[#1C1C1C] border border-[#DDD5C7] text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-[#1E5128]" />
+                <span>Imprimir Reporte</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => showToast(`Reporte de ${filteredReportData.currentMonthLabel} exportado`)}
+                className="px-5 py-2.5 rounded-2xl bg-[#1E5128] hover:bg-[#163E1F] text-white text-xs font-bold transition-all flex items-center gap-2 shadow-md cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Exportar CSV</span>
+              </button>
             </div>
           </div>
 
-          {/* ─── INTERACTIVE FILTER CONTROLS BAR ────────────────────────── */}
-          <div className="bg-white rounded-3xl p-5 border border-[#E8E1D5] shadow-lg space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              
-              {/* Month and Year Selectors */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2 text-xs font-extrabold text-[#5A544C] bg-[#F7F4EE] px-3.5 py-2 rounded-2xl border border-[#E8E1D5]">
-                  <Filter className="w-4 h-4 text-[#1E5128]" />
-                  <span>Filtrar por Periodo:</span>
-                </div>
-
-                {/* Month Dropdown */}
-                <div className="relative">
-                  <select
-                    value={reportMonth}
-                    onChange={(e) => setReportMonth(e.target.value)}
-                    className="px-4 py-2.5 rounded-2xl bg-[#FBF8F3] border border-[#DDD5C7] text-xs font-bold text-[#1C1C1C] outline-none focus:border-[#1E5128] focus:ring-2 focus:ring-emerald-100 cursor-pointer shadow-xs transition-all pr-8"
-                  >
-                    <option value="all">📅 Todo el Año (12 Meses)</option>
-                    <option value="1">Enero (01)</option>
-                    <option value="2">Febrero (02)</option>
-                    <option value="3">Marzo (03)</option>
-                    <option value="4">Abril (04)</option>
-                    <option value="5">Mayo (05)</option>
-                    <option value="6">Junio (06)</option>
-                    <option value="7">Julio (07)</option>
-                    <option value="8">Agosto (08)</option>
-                    <option value="9">Septiembre (09) — Mes Actual</option>
-                    <option value="10">Octubre (10)</option>
-                    <option value="11">Noviembre (11)</option>
-                    <option value="12">Diciembre (12)</option>
-                  </select>
-                </div>
-
-                {/* Year Dropdown */}
-                <div className="relative">
-                  <select
-                    value={reportYear}
-                    onChange={(e) => setReportYear(e.target.value)}
-                    className="px-4 py-2.5 rounded-2xl bg-[#FBF8F3] border border-[#DDD5C7] text-xs font-bold text-[#1C1C1C] outline-none focus:border-[#1E5128] focus:ring-2 focus:ring-emerald-100 cursor-pointer shadow-xs transition-all"
-                  >
-                    <option value="2026">Año 2026</option>
-                    <option value="2025">Año 2025</option>
-                    <option value="2024">Año 2024</option>
-                    <option value="all">Todos los Años</option>
-                  </select>
-                </div>
+          {/* ─── BARRA DE FILTRACIÓN POR MES Y AÑO ────────────────────────── */}
+          <div className="bg-white rounded-3xl p-5 border border-[#E8E1D5] shadow-md flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-[#5A544C] bg-[#F7F4EE] px-3.5 py-2 rounded-2xl border border-[#E8E1D5]">
+                <Filter className="w-4 h-4 text-[#1E5128]" />
+                <span>Seleccionar Periodo:</span>
               </div>
 
-              {/* Quick Preset Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-bold text-[#7A746B] mr-1">Acceso Rápido:</span>
-                {[
-                  { label: 'Septiembre 2026', m: '9', y: '2026' },
-                  { label: 'Agosto 2026', m: '8', y: '2026' },
-                  { label: 'Julio 2026', m: '7', y: '2026' },
-                  { label: 'Año Completo', m: 'all', y: '2026' },
-                ].map((preset, idx) => {
-                  const isSelected = reportMonth === preset.m && reportYear === preset.y;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setReportMonth(preset.m);
-                        setReportYear(preset.y);
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#1E5128] text-white shadow-md'
-                          : 'bg-[#F4EFE6] text-[#5A544C] hover:bg-[#EAE3D5]'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Selector de Mes */}
+              <select
+                value={reportMonth}
+                onChange={(e) => setReportMonth(e.target.value)}
+                className="px-4 py-2.5 rounded-2xl bg-[#FBF8F3] border border-[#DDD5C7] text-xs font-bold text-[#1C1C1C] outline-none focus:border-[#1E5128] focus:ring-2 focus:ring-emerald-100 cursor-pointer shadow-xs"
+              >
+                <option value="all">📅 Todo el Año</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre (Mes Actual)</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+
+              {/* Selector de Año */}
+              <select
+                value={reportYear}
+                onChange={(e) => setReportYear(e.target.value)}
+                className="px-4 py-2.5 rounded-2xl bg-[#FBF8F3] border border-[#DDD5C7] text-xs font-bold text-[#1C1C1C] outline-none focus:border-[#1E5128] focus:ring-2 focus:ring-emerald-100 cursor-pointer shadow-xs"
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="all">Todos los Años</option>
+              </select>
             </div>
 
-            {/* Sub-Tabs Selector */}
-            <div className="flex items-center gap-2 pt-3 border-t border-[#F0EBE0] overflow-x-auto">
-              {[
-                { id: 'resumen', label: '📊 Resumen General', icon: BarChart3 },
-                { id: 'ventas', label: '💰 Ventas & Facturación', icon: DollarSign },
-                { id: 'productos', label: '👕 Productos & Categorías', icon: ShoppingBag },
-                { id: 'ambiental', label: '🌱 Impacto Sostenible', icon: Leaf },
-              ].map((tab) => {
-                const isSelected = reportSubTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setReportSubTab(tab.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-[#1E5128] to-emerald-700 text-white shadow-md'
-                        : 'bg-[#FBF8F3] text-[#7A746B] hover:text-[#1C1C1C] hover:bg-[#F0EBE0]'
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+            {/* Quick Pills */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => { setReportMonth('9'); setReportYear('2026'); }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  reportMonth === '9' && reportYear === '2026'
+                    ? 'bg-[#1E5128] text-white'
+                    : 'bg-[#F4EFE6] text-[#5A544C] hover:bg-[#EAE3D5]'
+                }`}
+              >
+                Mes Actual
+              </button>
+              <button
+                type="button"
+                onClick={() => { setReportMonth('all'); setReportYear('2026'); }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  reportMonth === 'all'
+                    ? 'bg-[#1E5128] text-white'
+                    : 'bg-[#F4EFE6] text-[#5A544C] hover:bg-[#EAE3D5]'
+                }`}
+              >
+                Ver Todo el Año
+              </button>
             </div>
           </div>
 
-          {/* ─── 4 SUMMARY STAT CARDS (Calculated for filtered month) ──── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* ─── MONTOS DE DINERO Y TOTALES (KPI CARDS) ──────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             
-            {/* 1. Facturación */}
-            <div className="bg-gradient-to-br from-white to-[#F9F6F0] p-6 rounded-3xl border border-[#E8E1D5] shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:scale-125 transition-transform" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#5A544C]">Ventas Facturadas</span>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#1E5128] border border-emerald-200 flex items-center justify-center font-bold">
-                  Bs
-                </div>
+            {/* Monto Total Facturado */}
+            <div className="bg-gradient-to-br from-emerald-900 to-[#1E5128] text-white p-6 sm:p-7 rounded-3xl shadow-xl space-y-2 relative overflow-hidden">
+              <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-200 flex items-center justify-between">
+                <span>Monto Total Facturado</span>
+                <span className="p-1.5 rounded-lg bg-white/10 text-white font-bold text-xs">Bs</span>
               </div>
-              <div className="text-3xl font-black font-serif-remoda text-[#1E5128] tracking-tight">
+              <div className="text-3xl sm:text-4xl font-black font-serif-remoda tracking-tight">
                 Bs. {filteredReportData.totalRevenue.toLocaleString()}
               </div>
-              <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-emerald-700">
-                <ArrowUpRight className="w-4 h-4" />
-                <span>En {filteredReportData.currentMonthLabel}</span>
+              <div className="text-xs text-emerald-100/80">
+                Periodo: <span className="font-bold">{filteredReportData.currentMonthLabel}</span>
               </div>
             </div>
 
-            {/* 2. Pedidos */}
-            <div className="bg-gradient-to-br from-white to-[#F9F6F0] p-6 rounded-3xl border border-[#E8E1D5] shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:scale-125 transition-transform" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#5A544C]">Órdenes Registradas</span>
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-[#C85A2A] border border-amber-200 flex items-center justify-center">
-                  <Package className="w-5 h-5" />
-                </div>
+            {/* Total de Pedidos */}
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#E8E1D5] shadow-md space-y-2">
+              <div className="text-xs font-extrabold uppercase tracking-wider text-[#7A746B] flex items-center justify-between">
+                <span>Total de Pedidos</span>
+                <Package className="w-5 h-5 text-[#C85A2A]" />
               </div>
-              <div className="text-3xl font-black font-serif-remoda text-[#1C1C1C] tracking-tight">
-                {filteredReportData.totalOrdersCount} pedidos
+              <div className="text-3xl sm:text-4xl font-black font-serif-remoda text-[#1C1C1C] tracking-tight">
+                {filteredReportData.totalOrdersCount} <span className="text-base font-normal text-[#7A746B]">órdenes</span>
               </div>
-              <div className="text-xs text-[#7A746B] mt-2 font-medium">
-                Ticket promedio: <span className="font-bold text-[#1C1C1C]">Bs. {Math.round(filteredReportData.avgTicket)}</span>
+              <div className="text-xs text-[#7A746B]">
+                Transacciones registradas
               </div>
             </div>
 
-            {/* 3. Prendas Vendidas */}
-            <div className="bg-gradient-to-br from-white to-[#F9F6F0] p-6 rounded-3xl border border-[#E8E1D5] shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl group-hover:scale-125 transition-transform" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#5A544C]">Prendas Vendidas</span>
-                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
+            {/* Ticket Promedio */}
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#E8E1D5] shadow-md space-y-2">
+              <div className="text-xs font-extrabold uppercase tracking-wider text-[#7A746B] flex items-center justify-between">
+                <span>Ticket Promedio por Venta</span>
+                <DollarSign className="w-5 h-5 text-emerald-600" />
               </div>
-              <div className="text-3xl font-black font-serif-remoda text-[#1C1C1C] tracking-tight">
-                {filteredReportData.totalItemsCount} unidades
+              <div className="text-3xl sm:text-4xl font-black font-serif-remoda text-[#1C1C1C] tracking-tight">
+                Bs. {Math.round(filteredReportData.avgTicket).toLocaleString()}
               </div>
-              <div className="text-xs text-[#7A746B] mt-2 font-medium">
-                Catálogo activo: <span className="font-bold text-[#1C1C1C]">{products.length} SKUs</span>
-              </div>
-            </div>
-
-            {/* 4. Ahorro Hídrico */}
-            <div className="bg-gradient-to-br from-white to-[#F9F6F0] p-6 rounded-3xl border border-[#E8E1D5] shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-xl group-hover:scale-125 transition-transform" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#5A544C]">Ahorro Hídrico</span>
-                <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 border border-sky-200 flex items-center justify-center">
-                  <Droplets className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="text-3xl font-black font-serif-remoda text-sky-950 tracking-tight">
-                {filteredReportData.waterSaved.toLocaleString()} L
-              </div>
-              <div className="text-xs text-sky-800 mt-2 font-medium">
-                CO₂ mitigado: <span className="font-bold">{filteredReportData.co2Avoided} kg</span>
+              <div className="text-xs text-[#7A746B]">
+                Promedio gastado por cliente
               </div>
             </div>
 
           </div>
 
-          {/* ─── CHARTS ROW: REVENUE TREND & CATEGORY PIE ─────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Revenue Trend Area Chart */}
-            <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-lg space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0EBE0]">
-                <div>
-                  <h3 className="text-base font-bold font-serif-remoda text-[#1C1C1C]">
-                    Evolución de Ingresos del Periodo
-                  </h3>
-                  <p className="text-xs text-[#7A746B]">
-                    Comportamiento semanal de ventas para {filteredReportData.currentMonthLabel}
-                  </p>
-                </div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-[#1E5128] border border-emerald-200">
-                  Total: Bs. {filteredReportData.totalRevenue.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={filteredReportData.chartData}>
-                    <defs>
-                      <linearGradient id="reportAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#1E5128" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#1E5128" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F0EBE0" />
-                    <XAxis dataKey="period" stroke="#7A746B" fontSize={11} />
-                    <YAxis stroke="#7A746B" fontSize={11} tickFormatter={(v) => `Bs.${v}`} />
-                    <Tooltip 
-                      formatter={(val) => [`Bs. ${val}`, 'Ventas']}
-                      contentStyle={{ backgroundColor: '#1C1C1C', color: '#fff', borderRadius: '16px', border: 'none', fontSize: '12px' }}
-                    />
-                    <Area type="monotone" dataKey="ventas" stroke="#1E5128" strokeWidth={3} fillOpacity={1} fill="url(#reportAreaGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Category Breakdown Donut Chart */}
-            <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-lg space-y-4 flex flex-col justify-between">
-              <div className="pb-3 border-b border-[#F0EBE0]">
-                <h3 className="text-base font-bold font-serif-remoda text-[#1C1C1C]">
-                  Ventas por Categoría
-                </h3>
-                <p className="text-xs text-[#7A746B]">
-                  Participación en facturación
-                </p>
-              </div>
-
-              <div className="h-52 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={filteredReportData.categoryChartData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={75}
-                      paddingAngle={5}
-                    >
-                      {filteredReportData.categoryChartData.map((entry, index) => {
-                        const colors = ['#1E5128', '#C85A2A', '#8B5CF6', '#0EA5E9', '#F59E0B', '#10B981'];
-                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                      })}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(v) => [`Bs. ${v}`, 'Ingresos']}
-                      contentStyle={{ backgroundColor: '#1C1C1C', color: '#fff', borderRadius: '16px', border: 'none', fontSize: '12px' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Legend Badges */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#F0EBE0]">
-                {filteredReportData.categoryChartData.slice(0, 4).map((c, i) => {
-                  const colors = ['bg-[#1E5128]', 'bg-[#C85A2A]', 'bg-purple-600', 'bg-sky-600'];
-                  return (
-                    <div key={i} className="flex items-center gap-2 text-xs">
-                      <span className={`w-2.5 h-2.5 rounded-full ${colors[i % colors.length]}`} />
-                      <span className="truncate text-[#5A544C] font-semibold">{c.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-          </div>
-
-          {/* ─── PAYMENT METHODS & DELIVERY CHANNELS ROW ───────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Payment Methods */}
-            <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-lg space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-[#F0EBE0]">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold font-serif-remoda text-[#1C1C1C]">Métodos de Pago Utilizados</h3>
-                  <p className="text-xs text-[#7A746B]">Distribución de recaudación por canal en {filteredReportData.currentMonthLabel}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {Object.entries(filteredReportData.paymentMethodsMap).map(([method, amount], idx) => {
-                  const pct = filteredReportData.totalRevenue > 0 
-                    ? Math.round((amount / filteredReportData.totalRevenue) * 100) 
-                    : 0;
-                  return (
-                    <div key={idx} className="space-y-1.5 p-3 rounded-2xl bg-[#FBF8F3] border border-[#F0EBE0]">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-extrabold text-[#1C1C1C] flex items-center gap-1.5">
-                          <span>{method === 'QR' ? '📱' : method.includes('Trans') ? '🏦' : '💵'}</span>
-                          <span>{method}</span>
-                        </span>
-                        <div className="text-right">
-                          <span className="font-black text-[#1E5128]">Bs. {amount.toLocaleString()}</span>
-                          <span className="text-[10px] text-[#7A746B] ml-1.5">({pct}%)</span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-[#EAE3D5] rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-[#1E5128] to-emerald-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.max(pct, 4)}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Delivery vs Store Pickup Split */}
-            <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-lg space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b border-[#F0EBE0]">
-                <div className="p-2.5 rounded-xl bg-amber-50 text-[#C85A2A] border border-amber-200">
-                  <Truck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold font-serif-remoda text-[#1C1C1C]">Canales de Logística y Entrega</h3>
-                  <p className="text-xs text-[#7A746B]">Preferencia de los clientes en {filteredReportData.currentMonthLabel}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-center space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-[#1E5128] text-white flex items-center justify-center mx-auto shadow-md">
-                    <Truck className="w-6 h-6" />
-                  </div>
-                  <div className="text-2xl font-black font-serif-remoda text-[#1E5128]">
-                    {filteredReportData.deliverySplitMap['Envío a domicilio']}
-                  </div>
-                  <div className="text-xs font-extrabold text-[#1E5128]">Envío a Domicilio</div>
-                  <p className="text-[11px] text-[#5A544C]">Despacho en motos eco-eléctricas</p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 text-center space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-[#C85A2A] text-white flex items-center justify-center mx-auto shadow-md">
-                    <ShoppingBag className="w-6 h-6" />
-                  </div>
-                  <div className="text-2xl font-black font-serif-remoda text-[#C85A2A]">
-                    {filteredReportData.deliverySplitMap['Retiro en tienda']}
-                  </div>
-                  <div className="text-xs font-extrabold text-[#C85A2A]">Retiro en Tienda</div>
-                  <p className="text-[11px] text-[#5A544C]">Flagship Equipetrol y Casco Viejo</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* ─── TOP 5 SELLING PRODUCTS OF THE PERIOD ─────────────────── */}
+          {/* ─── TABLA DE REPORTE DETALLADO DE VENTAS DEL MES ────────────── */}
           <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-lg space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#F0EBE0]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0EBE0]">
               <div>
-                <h3 className="text-base font-bold font-serif-remoda text-[#1C1C1C]">
-                  Top Prendas Más Vendidas en {filteredReportData.currentMonthLabel}
+                <h3 className="text-lg font-bold font-serif-remoda text-[#1C1C1C]">
+                  Desglose de Ventas · {filteredReportData.currentMonthLabel}
                 </h3>
                 <p className="text-xs text-[#7A746B]">
-                  Ranking de artículos con mayor volumen y facturación en el mes
+                  Mostrando {filteredReportData.filteredOrders.length} transacciones en el periodo
                 </p>
               </div>
-              <span className="text-xs font-bold text-[#1E5128] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                Top 5 Ranking
-              </span>
+              <div className="text-sm font-black text-[#1E5128] bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-200">
+                Total Recaudado: Bs. {filteredReportData.totalRevenue.toLocaleString()}
+              </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-separate border-spacing-0">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wider">
-                    <th className="px-4 py-3 rounded-l-2xl font-extrabold bg-[#F7F4EE] text-[#5A544C]">Prenda / Diseño</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Categoría</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C] text-center">Uds Vendidas</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C] text-right">Facturación</th>
-                    <th className="px-4 py-3 rounded-r-2xl font-extrabold bg-[#F7F4EE] text-[#5A544C] text-right">Rendimiento</th>
+                    <th className="px-4 py-3.5 rounded-l-2xl font-extrabold bg-[#F7F4EE] text-[#5A544C]">N° Pedido</th>
+                    <th className="px-4 py-3.5 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Fecha</th>
+                    <th className="px-4 py-3.5 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Cliente</th>
+                    <th className="px-4 py-3.5 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Método de Pago</th>
+                    <th className="px-4 py-3.5 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Entrega</th>
+                    <th className="px-4 py-3.5 font-extrabold bg-[#F7F4EE] text-[#5A544C] text-right">Monto</th>
+                    <th className="px-4 py-3.5 rounded-r-2xl font-extrabold bg-[#F7F4EE] text-[#5A544C] text-right">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReportData.topProducts.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-[#FBF8F3] transition-colors">
-                      <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-full bg-[#1E5128] text-white flex items-center justify-center font-bold text-[10px]">
-                            #{idx + 1}
+                  {filteredReportData.filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-8 text-stone-400 font-medium">
+                        No hay ventas registradas para el periodo seleccionado ({filteredReportData.currentMonthLabel}).
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredReportData.filteredOrders.map((ord, idx) => (
+                      <tr key={idx} className="hover:bg-[#FBF8F3] transition-colors">
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] font-mono font-bold text-[#1E5128]">
+                          {ord.order_number || `RM-${ord.id}`}
+                        </td>
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-[#7A746B]">
+                          {formatOrderDate(ord)}
+                        </td>
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] font-bold text-[#1C1C1C]">
+                          {ord.recipient_name || ord.user?.name || 'Cliente'}
+                        </td>
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] font-semibold text-[#5A544C]">
+                          <span className="px-2 py-0.5 rounded-md bg-[#F4EFE6] text-[#5A544C] text-[11px]">
+                            {ord.payment_method || 'QR'}
                           </span>
-                          <img 
-                            src={p.image || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80'} 
-                            alt={p.name} 
-                            className="w-10 h-10 rounded-xl object-cover border border-[#E8E1D5]"
-                          />
-                          <span className="font-bold text-[#1C1C1C] text-sm">{p.name}</span>
-                        </div>
+                        </td>
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-[#5A544C]">
+                          {ord.delivery_type || 'Envío a domicilio'}
+                        </td>
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-right font-black text-[#1E5128] text-sm">
+                          Bs. {parseFloat(ord.total || 0).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-right">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {ord.status || 'Confirmado'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+                {filteredReportData.filteredOrders.length > 0 && (
+                  <tfoot>
+                    <tr className="bg-[#F7F4EE] font-bold text-xs">
+                      <td colSpan={5} className="px-4 py-3.5 rounded-l-2xl text-[#1C1C1C] font-extrabold uppercase text-[11px]">
+                        Total Facturado ({filteredReportData.currentMonthLabel}):
                       </td>
-                      <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
-                        <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-[#1E5128] font-bold text-[11px] border border-emerald-200">
-                          {p.category}
-                        </span>
+                      <td className="px-4 py-3.5 text-right font-black text-[#1E5128] text-base">
+                        Bs. {filteredReportData.totalRevenue.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-center font-extrabold text-[#1C1C1C]">
-                        {p.quantity} uds.
-                      </td>
-                      <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-right font-black text-[#1E5128]">
-                        Bs. {p.revenue.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-right">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-[#C85A2A] border border-amber-200">
-                          ⭐ Alta Demanda
-                        </span>
+                      <td className="px-4 py-3.5 rounded-r-2xl text-right text-[10px] text-[#7A746B]">
+                        {filteredReportData.filteredOrders.length} transacciones
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* ─── ORDERS BREAKDOWN TABLE FOR THE MONTH ─────────────────── */}
-          <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-lg space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#F0EBE0]">
-              <div>
-                <h3 className="text-base font-bold font-serif-remoda text-[#1C1C1C]">
-                  Historial de Pedidos en {filteredReportData.currentMonthLabel}
-                </h3>
-                <p className="text-xs text-[#7A746B]">
-                  {filteredReportData.filteredOrders.length} transacciones registradas en este periodo
-                </p>
-              </div>
-              <span className="text-xs font-extrabold text-[#1C1C1C] bg-[#F7F4EE] px-4 py-1.5 rounded-xl border border-[#E8E1D5]">
-                Total: Bs. {filteredReportData.totalRevenue.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-separate border-spacing-0">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wider">
-                    <th className="px-4 py-3 rounded-l-2xl font-extrabold bg-[#F7F4EE] text-[#5A544C]">Código</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Fecha</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Cliente</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Entrega</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C]">Pago</th>
-                    <th className="px-4 py-3 font-extrabold bg-[#F7F4EE] text-[#5A544C] text-right">Monto</th>
-                    <th className="px-4 py-3 rounded-r-2xl font-extrabold bg-[#F7F4EE] text-[#5A544C] text-right">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReportData.filteredOrders.slice(0, 10).map((ord, idx) => (
-                    <tr key={idx} className="hover:bg-[#FBF8F3] transition-colors">
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] font-mono font-bold text-[#1E5128]">
-                        {ord.order_number || `RM-${ord.id}`}
-                      </td>
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] text-[#7A746B]">
-                        {formatOrderDate(ord)}
-                      </td>
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] font-bold text-[#1C1C1C]">
-                        {ord.recipient_name || ord.user?.name || 'Cliente'}
-                      </td>
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] text-[#5A544C]">
-                        {ord.delivery_type || 'Envío'}
-                      </td>
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] font-semibold text-[#5A544C]">
-                        {ord.payment_method || 'QR'}
-                      </td>
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] text-right font-black text-[#1E5128]">
-                        Bs. {parseFloat(ord.total || 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 border-b border-[#F0EBE0] text-right">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          {ord.status || 'Confirmado'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                  </tfoot>
+                )}
               </table>
             </div>
           </div>
