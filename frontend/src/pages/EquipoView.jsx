@@ -56,7 +56,7 @@ export const EquipoView = ({ setCurrentTab, onOpenCustomModal }) => {
       name: 'Gloria Suarez',
       role: 'Gerente de Comunidad y Alianzas',
       tag: 'Impacto Social & Donaciones',
-      image: '/images/team/.jpg',
+      image: '/images/team/companera2.jpg',
       bio: 'Especialista en desarrollo comunitario. Coordina la red de donantes, talleres sociales y alianzas con colectivos locales de economía circular.',
       quote: '"ReModa es de todos: donantes, creadores y clientes que eligen con el corazón."',
       email: 'lucia@remoda.bo',
