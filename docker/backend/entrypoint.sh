@@ -17,10 +17,9 @@ fi
 # Limpiar caché de config para forzar lectura de env vars
 echo "==> Clearing config cache..."
 php artisan config:clear
-php artisan cache:clear
 
 # Optimizar para producción
-echo "==> Optimizing for production..."
+echo "==> Caching config and routes..."
 php artisan config:cache
 php artisan route:cache
 
