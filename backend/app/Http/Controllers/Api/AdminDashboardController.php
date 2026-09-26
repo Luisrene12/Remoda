@@ -197,30 +197,54 @@ class AdminDashboardController extends Controller
         return response()->json(['message' => 'Estado de reseña actualizado', 'review' => $review]);
     }
 
-    // RF-115 to RF-125: Comprehensive Reports
-    public function reports()
+    // RF-115 to RF-125: Comprehensive Reports with Month/Year filtering
+    public function reports(Request $request)
     {
-        $environmentalImpact = [
-            'total_kg_recollected' => 1250,
-            'total_kg_reused' => 850,
-            'total_products_created' => 250,
-            'total_donations_forwarded' => 100,
-            'water_saved_liters' => 1250 * 2700, // ~2700L saved per kg of reused cotton/denim
-            'co2_prevented_kg' => round(1250 * 3.6, 1), // ~3.6kg CO2 per kg textile diverted
-        ];
+        $month = $request->query('month');
+        $year = $request->query('year', date('Y'));
 
-        $topSellingProducts = Product::with('category')
+        $ordersQuery = Order::with(['items.product', 'user', 'branch']);
+        if (!empty($year) && is_numeric($year)) {
+            $ordersQuery->whereYear('created_at', $year);
+        }
+        if (!empty($month) && is_numeric($month)) {
+            $ordersQuery->whereMonth('created_at', $month);
+        }
+
+        $orders = $ordersQuery->get();
+        $totalSales = (float) $orders->sum('total');
+        $totalOrders = $orders->count();
+        $averageTicket = $totalOrders > 0 ? round($totalSales / $totalOrders, 2) : 0;
+
+        // Environmental Impact calculations
+        $recollectedKg = 1250;
+        $waterSavedLiters = $recollectedKg * 2700;
+        $co2PreventedKg = round($recollectedKg * 3.6, 1);
+
+        $topSelling = Product::with('category')
             ->orderBy('reviews_count', 'desc')
-            ->take(5)
+            ->take(6)
             ->get();
 
         return response()->json([
-            'environmental_impact' => $environmentalImpact,
-            'top_selling' => $topSellingProducts,
+            'filter_month' => $month,
+            'filter_year' => $year,
+            'total_sales' => $totalSales,
+            'total_orders' => $totalOrders,
+            'average_ticket' => $averageTicket,
+            'environmental_impact' => [
+                'total_kg_recollected' => $recollectedKg,
+                'total_kg_reused' => 850,
+                'total_products_created' => Product::count(),
+                'total_donations_forwarded' => 100,
+                'water_saved_liters' => $waterSavedLiters,
+                'co2_prevented_kg' => $co2PreventedKg,
+            ],
+            'top_selling' => $topSelling,
             'inventory_summary' => [
                 'total_skus' => Product::count(),
-                'total_units' => Product::sum('stock'),
-                'low_stock_alerts' => Product::where('stock', '<=', 3)->get(),
+                'total_units' => (int) Product::sum('stock'),
+                'low_stock_alerts' => Product::where('stock', '<=', 3)->take(8)->get(),
             ]
         ]);
     }

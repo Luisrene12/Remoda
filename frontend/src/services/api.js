@@ -139,7 +139,7 @@ export const api = {
 
   // Admin
   getAdminStats: () => cachedFetch(`${API_URL}/admin/stats`, 60_000),
-  getAdminReports: () => cachedFetch(`${API_URL}/admin/reports`, 60_000),
+  getAdminReports: (p = {}) => cachedFetch(`${API_URL}/admin/reports?${new URLSearchParams(p)}`, 30_000),
   getAdminUsers: (p = {}) => cachedFetch(`${API_URL}/admin/users?${new URLSearchParams(p)}`, 30_000),
   createUser: (data) => apiRequest(`${API_URL}/admin/users`, 'POST', data).then(r => { clearApiCache(`${API_URL}/admin/users`); return r; }),
   updateUserStatus: (uid, status) => apiRequest(`${API_URL}/admin/users/${uid}/status`, 'PUT', { status }),
