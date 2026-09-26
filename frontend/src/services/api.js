@@ -54,14 +54,28 @@ async function cachedFetch(url, ttlMs = 60_000) {
   return promise;
 }
 
-// ─── POST/PUT/DELETE helper ───────────────────────────────────────────────────
-async function apiRequest(url, method, body) {
-  const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return res.json();
+// ─── POST/PUT/DELETE helper with 7s timeout ──────────────────────────────────
+async function apiRequest(url, method, body, timeoutMs = 7000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
 }
 
 // ─── API surface ──────────────────────────────────────────────────────────────
