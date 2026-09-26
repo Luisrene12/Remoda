@@ -57,15 +57,15 @@ export const ProductCard = React.memo(({ product, onSelectProduct, isFavorite, o
 
         {/* Badges top-left */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+          {hasDiscount && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black text-white bg-gradient-to-r from-red-600 via-rose-500 to-[#C85A2A] shadow-lg shadow-red-600/35 backdrop-blur-md border border-white/20 animate-pulse">
+              🔥 -{discountPercent}% OFF
+            </span>
+          )}
           {product.badge && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-[#C85A2A] shadow-lg shadow-[#C85A2A]/30 backdrop-blur-sm">
               <Sparkles className="w-2.5 h-2.5" />
               {product.badge}
-            </span>
-          )}
-          {hasDiscount && (
-            <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold text-white bg-emerald-600 shadow-md">
-              -{discountPercent}%
             </span>
           )}
         </div>
@@ -122,12 +122,12 @@ export const ProductCard = React.memo(({ product, onSelectProduct, isFavorite, o
 
         {/* Price + Rating */}
         <div className="flex items-center justify-between mt-auto pt-1">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-xl font-extrabold text-stone-900">
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-black text-[#1E5128]">
               Bs. {parseFloat(product.price).toFixed(0)}
             </span>
-            {product.original_price && (
-              <span className="text-xs text-stone-400 line-through font-medium">
+            {hasDiscount && (
+              <span className="text-xs text-rose-500 font-bold line-through bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-md">
                 Bs. {parseFloat(product.original_price).toFixed(0)}
               </span>
             )}

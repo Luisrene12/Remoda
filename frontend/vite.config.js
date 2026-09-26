@@ -11,13 +11,30 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    watch: {
-      usePolling: true,
-    },
     proxy: {
       '/api': {
         target: process.env.VITE_API_TARGET || 'http://nginx:80',
         changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    target: 'es2020',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/recharts')) {
+            return 'vendor-charts';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
+        },
       },
     },
   },

@@ -142,33 +142,53 @@ export const CatalogPage = ({
     <div className="min-h-screen bg-transparent">
 
       {/* ── HERO BANNER ─────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-[#1a1a18] h-56 sm:h-72">
+      <div className="relative overflow-hidden bg-[#0D1A10] h-72 sm:h-88" style={{ height: '22rem' }}>
+        {/* Ken Burns image */}
         <img
           src="/hero-bg.jpg"
           alt="Catálogo ReModa"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-50"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-40 animate-hero-ken-burns"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a18]/95 via-[#1a1a18]/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a18] via-transparent to-transparent opacity-60" />
+        {/* Layered gradients */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0D1A10]/98 via-[#0D1A10]/75 to-[#0D1A10]/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D1A10]/90 via-transparent to-transparent" />
+
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 -mr-32 -mt-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-[#C85A2A]/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 h-full flex flex-col justify-center max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur border border-white/20 rounded-full w-fit mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" style={{ animationDuration: '6s' }} />
-            <span className="text-xs font-bold text-amber-200 tracking-widest uppercase">Colección Circular</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full w-fit mb-4 animate-slide-in-down shadow-xl">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-sparkle" />
+            <span className="text-xs font-bold text-amber-200 tracking-widest uppercase">Colección Circular · {new Date().getFullYear()}</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight font-serif-remoda">
-            Catálogo <span className="text-[#C85A2A]">Consciente</span>
+          <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight font-serif-remoda animate-fade-in-up">
+            Catálogo <span className="text-gradient-gold">Consciente</span>
           </h1>
-          <p className="text-sm text-white/70 mt-2 max-w-lg">
+          <p className="text-sm sm:text-base text-white/70 mt-3 max-w-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             Prendas rediseñadas con historia, calidad artesanal y mínimo impacto ambiental.
           </p>
 
           {/* Eco pills */}
-          <div className="flex gap-2 mt-4">
-            <span className="px-3 py-1 bg-emerald-800/60 backdrop-blur border border-emerald-500/30 rounded-full text-xs font-semibold text-emerald-300">🌱 100% Reutilizado</span>
-            <span className="px-3 py-1 bg-amber-800/60 backdrop-blur border border-amber-500/30 rounded-full text-xs font-semibold text-amber-300">✨ Pieza Única</span>
-            <span className="hidden sm:block px-3 py-1 bg-blue-900/50 backdrop-blur border border-blue-400/30 rounded-full text-xs font-semibold text-blue-300">💧 Bajo Consumo</span>
+          <div className="flex flex-wrap gap-2.5 mt-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            {[
+              { label: '🌱 100% Reutilizado', cls: 'bg-emerald-800/60 border-emerald-500/30 text-emerald-300' },
+              { label: '✨ Pieza Única', cls: 'bg-amber-800/60 border-amber-500/30 text-amber-300' },
+              { label: '💧 Bajo Consumo', cls: 'hidden sm:block bg-blue-900/50 border-blue-400/30 text-blue-300' },
+              { label: '♻️ Cero Desperdicio', cls: 'hidden md:block bg-purple-900/50 border-purple-400/30 text-purple-300' },
+            ].map((pill, i) => (
+              <span key={i} className={`px-3.5 py-1.5 backdrop-blur border rounded-full text-xs font-semibold ${pill.cls}`}>
+                {pill.label}
+              </span>
+            ))}
           </div>
+        </div>
+
+        {/* Wave bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-12 overflow-hidden">
+          <svg viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-full">
+            <path d="M0 48L60 40C120 32 240 16 360 12C480 8 600 16 720 20C840 24 960 24 1080 20C1200 16 1320 8 1380 4L1440 0V48H1380C1320 48 1200 48 1080 48C960 48 840 48 720 48C600 48 480 48 360 48C240 48 120 48 60 48H0Z" fill="transparent"/>
+          </svg>
         </div>
       </div>
 
@@ -269,33 +289,33 @@ export const CatalogPage = ({
           <aside className={`w-72 shrink-0 space-y-5 sticky top-24 ${showMobileFilters ? 'block' : 'hidden'} lg:block`}>
 
             {/* Categories */}
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+            <div className="bg-white rounded-3xl border border-stone-100 shadow-lg overflow-hidden">
+              <div className="px-5 py-4 bg-gradient-to-r from-[#1E5128] to-emerald-700 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-[#1E5128]" />
-                  <span className="text-sm font-extrabold text-stone-800 uppercase tracking-wider">Categorías</span>
+                  <Tag className="w-4 h-4 text-emerald-200" />
+                  <span className="text-sm font-extrabold text-white uppercase tracking-wider">Categorías</span>
                 </div>
-                <span className="text-xs font-bold text-[#1E5128] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="text-xs font-bold text-white bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
                   {categoriesList.length}
                 </span>
               </div>
-              <div className="p-4 space-y-1.5">
+              <div className="p-3 space-y-1">
                 {categoriesList.map((cat) => {
                   const isActive = selectedCategory.toLowerCase() === cat.id.toLowerCase();
                   return (
                     <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 cursor-pointer group ${
                         isActive
-                          ? 'bg-[#1E5128] text-white shadow-md shadow-[#1E5128]/20'
-                          : 'text-stone-700 hover:bg-stone-50 hover:text-[#1E5128]'
+                          ? 'bg-gradient-to-r from-[#1E5128] to-emerald-700 text-white shadow-lg shadow-[#1E5128]/25 scale-[1.02]'
+                          : 'text-stone-700 hover:bg-stone-50 hover:text-[#1E5128] hover:translate-x-1'
                       }`}>
-                      <span className="flex items-center gap-2.5">
-                        <span className="text-base leading-none">{cat.icon}</span>
+                      <span className="flex items-center gap-3">
+                        <span className={`text-lg leading-none transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>{cat.icon}</span>
                         <span>{cat.label}</span>
                       </span>
                       {cat.count !== null && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                          isActive ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500'
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold transition-colors ${
+                          isActive ? 'bg-white/25 text-white' : 'bg-stone-100 text-stone-500 group-hover:bg-emerald-100 group-hover:text-[#1E5128]'
                         }`}>{cat.count}</span>
                       )}
                     </button>
@@ -361,25 +381,30 @@ export const CatalogPage = ({
               </div>
             </div>
 
-            {/* Eco Stats card */}
-            <div className="bg-gradient-to-br from-[#1E5128] to-[#163E1F] rounded-3xl p-5 text-white shadow-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">Impacto Positivo</span>
+            {/* Eco Stats card — glowing pro version */}
+            <div className="relative bg-gradient-to-br from-[#141C15] to-[#0D1A10] rounded-3xl p-5 text-white shadow-2xl overflow-hidden border border-emerald-900/30 animate-glow-green">
+              {/* Glow orb */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center gap-2 mb-4 relative z-10">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-amber-300 animate-sparkle" />
+                </div>
+                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-300">Impacto Positivo</span>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center py-1.5 border-b border-white/10">
-                  <span className="text-xs text-emerald-200">💧 Agua ahorrada</span>
-                  <span className="text-sm font-extrabold">2,400 L</span>
-                </div>
-                <div className="flex justify-between items-center py-1.5 border-b border-white/10">
-                  <span className="text-xs text-emerald-200">🌿 CO₂ evitado</span>
-                  <span className="text-sm font-extrabold">18 kg</span>
-                </div>
-                <div className="flex justify-between items-center py-1.5">
-                  <span className="text-xs text-emerald-200">♻️ Prendas salvadas</span>
-                  <span className="text-sm font-extrabold">250+</span>
-                </div>
+              <div className="space-y-2.5 relative z-10">
+                {[
+                  { emoji: '💧', label: 'Agua ahorrada', value: '2,400 L', color: 'text-blue-300' },
+                  { emoji: '🌿', label: 'CO₂ evitado', value: '18 kg', color: 'text-emerald-300' },
+                  { emoji: '♻️', label: 'Prendas salvadas', value: '250+', color: 'text-amber-300' },
+                  { emoji: '🌡️', label: 'Huella hídrica', value: '-73%', color: 'text-teal-300' },
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-white/8 last:border-0 group">
+                    <span className="text-xs text-stone-400 flex items-center gap-2 group-hover:text-stone-300 transition-colors">
+                      <span>{item.emoji}</span> {item.label}
+                    </span>
+                    <span className={`text-sm font-extrabold ${item.color}`}>{item.value}</span>
+                  </div>
+                ))}
               </div>
             </div>
 

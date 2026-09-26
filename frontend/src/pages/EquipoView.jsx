@@ -53,10 +53,10 @@ export const EquipoView = ({ setCurrentTab, onOpenCustomModal }) => {
     },
     {
       id: 5,
-      name: 'Lucía Benítez',
+      name: 'Gloria Suarez',
       role: 'Gerente de Comunidad y Alianzas',
       tag: 'Impacto Social & Donaciones',
-      image: '/images/team/community.jpg',
+      image: '/images/team/.jpg',
       bio: 'Especialista en desarrollo comunitario. Coordina la red de donantes, talleres sociales y alianzas con colectivos locales de economía circular.',
       quote: '"ReModa es de todos: donantes, creadores y clientes que eligen con el corazón."',
       email: 'lucia@remoda.bo',
@@ -67,7 +67,7 @@ export const EquipoView = ({ setCurrentTab, onOpenCustomModal }) => {
 
   return (
     <div className="min-h-screen bg-[#F6F3FB] text-stone-900 pb-24 animate-in fade-in duration-500">
-      
+
       {/* Hero Banner — Ultra Chic Dark Violet Fashion Theme */}
       <section className="relative bg-gradient-to-br from-[#120B1C] via-[#381B54] to-[#1D1429] text-white py-24 px-4 sm:px-6 lg:px-8 overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-purple-500/25 rounded-full blur-3xl pointer-events-none animate-pulse" />
@@ -91,14 +91,13 @@ export const EquipoView = ({ setCurrentTab, onOpenCustomModal }) => {
 
       {/* Grid of 5 Team Members */}
       <section className="max-w-7xl mx-auto px-4 py-16 space-y-16">
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {teamMembers.map((member, index) => (
             <div
               key={member.id}
-              className={`group bg-white rounded-3xl overflow-hidden border border-purple-100 shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col transform hover:-translate-y-3 ${
-                index === 0 ? 'lg:col-span-1 border-2 border-purple-500/30' : ''
-              }`}
+              className={`group bg-white rounded-3xl overflow-hidden border border-purple-100 shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col transform hover:-translate-y-3 ${index === 0 ? 'lg:col-span-1 border-2 border-purple-500/30' : ''
+                }`}
             >
               {/* Photo Area with glowing aura effect */}
               <div className="relative aspect-[4/4] overflow-hidden bg-purple-950">
@@ -141,7 +140,7 @@ export const EquipoView = ({ setCurrentTab, onOpenCustomModal }) => {
 
               {/* Body */}
               <div className="p-6 flex flex-col flex-1 justify-between gap-4 bg-white">
-                
+
                 <div className="space-y-3">
                   <div className="inline-block text-[11px] font-extrabold text-purple-800 uppercase tracking-widest bg-purple-50 px-3 py-1 rounded-lg border border-purple-100">
                     {member.tag}

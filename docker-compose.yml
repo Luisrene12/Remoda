@@ -1,43 +1,4 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: remoda_mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: railway
-      MYSQL_USER: remoda
-      MYSQL_PASSWORD: remoda_password
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3306:3306"
-    volumes:
-      - remoda_mysql_data:/var/lib/mysql
-    networks:
-      - remoda_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: remoda_phpmyadmin
-    restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: root
-      UPLOAD_LIMIT: 64M
-    ports:
-      - "8080:80"
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - remoda_network
-
   backend:
     build:
       context: .
@@ -49,17 +10,15 @@ services:
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: railway
-      DB_USERNAME: remoda
-      DB_PASSWORD: remoda_password
+      DB_CONNECTION: pgsql
+      DB_HOST: aws-0-us-east-1.pooler.supabase.com
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+      DB_USERNAME: postgres.widcbgueidgqjtsnyqys
+      DB_PASSWORD: Remoda123..
+      DB_SSLMODE: require
     volumes:
       - ./backend:/var/www/html
-    depends_on:
-      mysql:
-        condition: service_healthy
     networks:
       - remoda_network
 
@@ -86,7 +45,3 @@ services:
 networks:
   remoda_network:
     driver: bridge
-
-volumes:
-  remoda_mysql_data:
-    driver: local
