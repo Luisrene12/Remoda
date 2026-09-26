@@ -1,0 +1,11 @@
+.git
+.git/**
+**/.git
+**/.git/**
+**/.env
+**/.env.*
+!backend/.env.example
+**/vendor
+**/node_modules
+frontend/dist
+backend/storage/logs/**
