@@ -54,8 +54,11 @@ import {
   ChevronRight,
   CalendarDays,
   LogOut,
+  AlertTriangle,
+  Check,
+  X,
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, clearApiCache } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const formatOrderDate = (order) => {
@@ -225,15 +228,64 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
     return list;
   }, [orders, products]);
 
-  const handleMarkAsSold = async (product) => {
-    if (!window.confirm(`¿Confirmar venta de "${product.name}"? Se marcará como vendida (stock = 0) y se registrará en la pestaña Prendas Vendidas.`)) return;
-    try {
-      await api.updateProduct(product.id, { stock: 0, is_active: false, is_sold: true });
-      alert(`¡"${product.name}" registrada en Prendas Vendidas!`);
-      loadAll();
-    } catch (err) {
-      alert("Error al registrar la venta de la prenda");
-    }
+  // Custom In-App Toast & Confirmation Modal State
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(prev => (prev?.message === message ? null : prev));
+    }, 3500);
+  };
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirmar',
+    confirmColor: 'bg-rose-600 hover:bg-rose-700 shadow-rose-200',
+    icon: 'trash',
+    onConfirm: null,
+  });
+
+  const openConfirm = ({ title, message, confirmText = 'Confirmar', confirmColor = 'bg-rose-600 hover:bg-rose-700 shadow-rose-200', icon = 'trash', onConfirm }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      confirmColor,
+      icon,
+      onConfirm,
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleMarkAsSold = (product) => {
+    openConfirm({
+      title: '¿Marcar Prenda como Vendida?',
+      message: `Se marcará "${product.name}" como agotada (stock = 0) y pasará de inmediato al panel de Prendas Vendidas.`,
+      confirmText: 'Sí, Marcar Vendido',
+      confirmColor: 'bg-[#C85A2A] hover:bg-[#b04d22] shadow-orange-200',
+      icon: 'check',
+      onConfirm: async () => {
+        closeConfirm();
+        // Optimistic UI Update: instantaneous 0ms response!
+        const previousProducts = [...products];
+        setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock: 0, is_active: false, is_sold: true } : p));
+        showToast(`¡"${product.name}" registrada en Prendas Vendidas!`);
+
+        try {
+          await api.updateProduct(product.id, { stock: 0, is_active: false, is_sold: true });
+          clearApiCache();
+        } catch (err) {
+          setProducts(previousProducts);
+          showToast('Error al registrar la venta en el servidor', 'error');
+        }
+      }
+    });
   };
   const [userModalError, setUserModalError] = useState('');
   const [userModalSuccess, setUserModalSuccess] = useState('');
@@ -383,7 +435,7 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
           meta_title: catMetaTitle,
           meta_description: catMetaDescription,
         });
-        alert("¡Categoría actualizada exitosamente!");
+        showToast("¡Categoría actualizada exitosamente!");
       } else {
         await api.createCategory({
           name: catName,
@@ -397,23 +449,39 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
           meta_title: catMetaTitle,
           meta_description: catMetaDescription,
         });
-        alert("¡Categoría registrada exitosamente! Ya es visible en el catálogo de clientes.");
+        showToast("¡Categoría registrada exitosamente!");
       }
       setShowCategoryModal(false);
+      clearApiCache();
       loadAll();
     } catch (err) {
-      alert("Error guardando la categoría");
+      showToast("Error guardando la categoría", "error");
     }
   };
 
-  const handleDeleteCategory = async (catId) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta categoría?")) return;
-    try {
-      await api.deleteCategory(catId);
-      loadAll();
-    } catch (err) {
-      alert("Error eliminando categoría");
-    }
+  const handleDeleteCategory = (catId) => {
+    const cat = categories.find(c => c.id === catId);
+    openConfirm({
+      title: '¿Eliminar Categoría?',
+      message: cat ? `Se eliminará "${cat.name}". Asegúrate de no tener productos asignados exclusivamente a esta categoría.` : '¿Seguro que deseas eliminar esta categoría?',
+      confirmText: 'Sí, Eliminar Categoría',
+      confirmColor: 'bg-rose-600 hover:bg-rose-700 shadow-rose-200',
+      icon: 'trash',
+      onConfirm: async () => {
+        closeConfirm();
+        const prevCats = [...categories];
+        setCategories(prev => prev.filter(c => c.id !== catId));
+        showToast('Categoría eliminada con éxito');
+
+        try {
+          await api.deleteCategory(catId);
+          clearApiCache();
+        } catch (err) {
+          setCategories(prevCats);
+          showToast('Error al eliminar la categoría en el servidor', 'error');
+        }
+      }
+    });
   };
 
   // Product Handlers
@@ -532,33 +600,55 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
       }
 
       if (editingProduct) {
-        alert("¡Producto y precios actualizados exitosamente!");
+        showToast("¡Producto y precios actualizados exitosamente!");
       } else {
-        alert("¡Producto registrado exitosamente! Ya está publicado en el catálogo y página principal de los clientes.");
+        showToast("¡Producto registrado exitosamente!");
       }
       setShowProductModal(false);
+      clearApiCache();
       loadAll();
     } catch (err) {
-      alert("Error guardando el producto");
+      showToast("Error guardando el producto", "error");
     }
   };
 
-  const handleDeleteProduct = async (prodId) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este producto?")) return;
-    try {
-      await api.deleteProduct(prodId);
-      loadAll();
-    } catch (err) {
-      alert("Error eliminando producto");
-    }
+  const handleDeleteProduct = (prodId) => {
+    const prod = products.find(p => p.id === prodId);
+    openConfirm({
+      title: '¿Eliminar Prenda del Catálogo?',
+      message: prod ? `Se eliminará permanentemente "${prod.name}". Esta acción no se puede deshacer.` : '¿Seguro que deseas eliminar este producto?',
+      confirmText: 'Sí, Eliminar Prenda',
+      confirmColor: 'bg-rose-600 hover:bg-rose-700 shadow-rose-200',
+      icon: 'trash',
+      onConfirm: async () => {
+        closeConfirm();
+        // Optimistic UI Update: instantaneous 0ms response!
+        const previousProducts = [...products];
+        setProducts(prev => prev.filter(p => p.id !== prodId));
+        showToast('Prenda eliminada con éxito');
+
+        try {
+          await api.deleteProduct(prodId);
+          clearApiCache();
+        } catch (err) {
+          setProducts(previousProducts);
+          showToast('Error al eliminar el producto en el servidor', 'error');
+        }
+      }
+    });
   };
 
   const handleToggleProductActive = async (prod) => {
+    const newActive = !prod.is_active;
+    setProducts(prev => prev.map(p => p.id === prod.id ? { ...p, is_active: newActive } : p));
+    showToast(newActive ? 'Prenda activada en catálogo' : 'Prenda ocultada del catálogo');
+
     try {
-      await api.updateProduct(prod.id, { is_active: !prod.is_active });
-      loadAll();
+      await api.updateProduct(prod.id, { is_active: newActive });
+      clearApiCache();
     } catch (err) {
-      alert("Error al cambiar visibilidad");
+      setProducts(prev => prev.map(p => p.id === prod.id ? { ...p, is_active: prod.is_active } : p));
+      showToast('Error al cambiar visibilidad', 'error');
     }
   };
 
@@ -2669,6 +2759,80 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
 
             </form>
           </div>
+        </div>
+      )}
+
+      {/* ─── CUSTOM CONFIRMATION MODAL ────────────────────────────────────────── */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-stone-200 overflow-hidden transform animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header / Accent Bar */}
+            <div className="p-6 pb-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0 shadow-sm">
+                  {confirmModal.icon === 'trash' ? (
+                    <Trash2 className="w-6 h-6" />
+                  ) : confirmModal.icon === 'check' ? (
+                    <CheckCircle2 className="w-6 h-6 text-[#C85A2A]" />
+                  ) : (
+                    <AlertTriangle className="w-6 h-6 text-amber-500" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-black text-stone-900 tracking-tight leading-snug">
+                    {confirmModal.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm text-stone-600 leading-relaxed">
+                    {confirmModal.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 bg-stone-50/80 border-t border-stone-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeConfirm}
+                className="px-4 py-2.5 rounded-xl font-bold text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-200/60 transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className={`px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all transform active:scale-95 cursor-pointer flex items-center gap-2 ${confirmModal.confirmColor}`}
+              >
+                {confirmModal.icon === 'trash' ? <Trash2 className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                <span>{confirmModal.confirmText}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TOAST NOTIFICATION ──────────────────────────────────────────────── */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[1000] flex items-center gap-3 px-5 py-3.5 bg-stone-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-white/10 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${toast.type === 'error' ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+            {toast.type === 'error' ? (
+              <XCircle className="w-5 h-5" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5" />
+            )}
+          </div>
+          <div className="text-sm font-semibold tracking-wide">
+            {toast.message}
+          </div>
+          <button 
+            onClick={() => setToast(null)}
+            className="ml-2 p-1 rounded-lg hover:bg-white/10 text-stone-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
