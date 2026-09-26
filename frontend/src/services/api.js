@@ -3,7 +3,7 @@
  * Categories and products are cached for 60s to avoid redundant fetches
  */
 
-const API_URL = '/api';
+const API_URL = (import.meta.env.VITE_API_URL ?? '') + '/api';
 
 // ─── Simple in-memory cache ──────────────────────────────────────────────────
 const _cache = new Map();
