@@ -2,9 +2,14 @@ FROM php:8.2-fpm-alpine
 
 RUN apk add --no-cache \
     curl libpng-dev libxml2-dev zip unzip git \
-    oniguruma-dev libzip-dev bash nginx mysql-client
+    oniguruma-dev libzip-dev bash nginx \
+    postgresql-dev libpq-dev
 
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install pdo pdo_pgsql pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# Verify extensions installed correctly
+RUN php -m | grep -E "pdo|pgsql"
 
 RUN sed -i \
     -e 's/^pm.max_children = .*/pm.max_children = 5/' \
