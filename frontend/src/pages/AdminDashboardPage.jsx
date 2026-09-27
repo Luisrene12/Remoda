@@ -1482,32 +1482,6 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
               </div>
             </div>
 
-            {/* KPI Summary Cards for Sales */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-200">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#1E5128]">Total Prendas Vendidas</div>
-                <div className="text-2xl font-black text-[#1E5128] font-serif-remoda mt-1">
-                  {soldItemsList.reduce((acc, curr) => acc + (curr.quantity || 1), 0)} prendas
-                </div>
-                <div className="text-[10px] text-emerald-700 mt-1 font-semibold">Salidas de inventario confirmadas</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-200">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#C85A2A]">Ingresos Brutos por Ventas</div>
-                <div className="text-2xl font-black text-[#C85A2A] font-serif-remoda mt-1">
-                  Bs. {soldItemsList.reduce((acc, curr) => acc + parseFloat(curr.total || curr.price || 0), 0).toFixed(0)}
-                </div>
-                <div className="text-[10px] text-amber-700 mt-1 font-semibold">Monto total facturado</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50/50 border border-purple-200">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-purple-800">Promedio por Prenda</div>
-                <div className="text-2xl font-black text-purple-900 font-serif-remoda mt-1">
-                  Bs. {soldItemsList.length > 0 ? (soldItemsList.reduce((acc, curr) => acc + parseFloat(curr.total || curr.price || 0), 0) / soldItemsList.length).toFixed(0) : '0'}
-                </div>
-                <div className="text-[10px] text-purple-700 mt-1 font-semibold">Ticket promedio unitario</div>
-              </div>
-            </div>
 
             {/* Search Bar for Sold Items */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-[#F0EBE0] mb-5">
