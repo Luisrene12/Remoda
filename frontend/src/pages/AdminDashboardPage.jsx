@@ -978,37 +978,6 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
           </div>
         </div>
 
-        {/* Quick Horizontal Tab Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {[
-            { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
-            { id: 'reportes', label: 'Reportes', emoji: '📈' },
-            { id: 'productos', label: 'Productos', emoji: '👕' },
-            { id: 'vendidos', label: 'Vendidos', emoji: '🏷️' },
-            { id: 'pedidos', label: 'Pedidos', emoji: '📦' },
-            { id: 'categorias', label: 'Categorías', emoji: '🗂️' },
-            { id: 'usuarios', label: 'Usuarios', emoji: '👥' },
-            { id: 'recolecciones', label: 'Recolecciones', emoji: '♻️' },
-            { id: 'cupones', label: 'Cupones', emoji: '🎫' },
-            { id: 'configuracion', label: 'Configuración', emoji: '⚙️' },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-[#1E5128] text-white shadow-md shadow-[#1E5128]/25 scale-105'
-                    : 'bg-white text-[#5A544C] border border-[#E8E1D5] hover:bg-[#F4EFE6] hover:text-[#1C1C1C]'
-                }`}
-              >
-                <span>{tab.emoji}</span>
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
 
         {/* 1. DASHBOARD OVERVIEW WITH RECHARTS GRAPHS */}
       {activeTab === 'dashboard' && (
