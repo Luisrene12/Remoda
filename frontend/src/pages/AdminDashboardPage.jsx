@@ -2227,196 +2227,46 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
             </div>
           </div>
 
-          {/* ═══ PAYMENT METHODS & DELIVERY SPLIT ══════════════════════════ */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            {/* Payment Methods Breakdown */}
-            <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-md">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE0]">
-                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
-                  <CreditCard className="w-5 h-5 text-[#C85A2A]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold font-serif-remoda text-[#1C1C1C]">Ventas por Método de Pago</h3>
-                  <p className="text-[10px] text-[#7A746B]">Desglose de ingresos según forma de pago</p>
-                </div>
+          {/* ═══ PAYMENT METHODS BREAKDOWN ══════════════════════════════════ */}
+          <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-md">
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE0]">
+              <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+                <CreditCard className="w-5 h-5 text-[#C85A2A]" />
               </div>
-
-              <div className="space-y-3">
-                {[
-                  { label: 'QR / Código QR', amount: filteredReportData.paymentMethodsMap['QR'] || 0, color: 'from-emerald-500 to-teal-500', bgLight: 'bg-emerald-50', textColor: 'text-emerald-700', icon: '📱' },
-                  { label: 'Efectivo', amount: filteredReportData.paymentMethodsMap['Efectivo'] || 0, color: 'from-amber-500 to-orange-500', bgLight: 'bg-amber-50', textColor: 'text-amber-700', icon: '💵' },
-                  { label: 'Transferencia', amount: filteredReportData.paymentMethodsMap['Transferencia'] || 0, color: 'from-blue-500 to-indigo-500', bgLight: 'bg-blue-50', textColor: 'text-blue-700', icon: '🏦' },
-                  { label: 'Tarjeta / Otro', amount: filteredReportData.paymentMethodsMap['Tarjeta / Otro'] || 0, color: 'from-purple-500 to-pink-500', bgLight: 'bg-purple-50', textColor: 'text-purple-700', icon: '💳' },
-                ].map((method, idx) => {
-                  const maxAmount = Math.max(...Object.values(filteredReportData.paymentMethodsMap), 1);
-                  const pct = Math.round((method.amount / (filteredReportData.totalRevenue || 1)) * 100);
-                  return (
-                    <div key={idx} className={`p-3.5 rounded-2xl ${method.bgLight} border border-opacity-50 hover:scale-[1.01] transition-transform`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-lg">{method.icon}</span>
-                          <span className="text-xs font-bold text-[#1C1C1C]">{method.label}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-extrabold ${method.textColor} bg-white px-2 py-0.5 rounded-md`}>{pct}%</span>
-                          <span className="text-sm font-black text-[#1C1C1C]">Bs. {method.amount.toLocaleString()}</span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-white rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full bg-gradient-to-r ${method.color} transition-all duration-1000`}
-                          style={{ width: `${Math.max((method.amount / maxAmount) * 100, method.amount > 0 ? 8 : 0)}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div>
+                <h3 className="text-sm font-bold font-serif-remoda text-[#1C1C1C]">Ventas por Método de Pago</h3>
+                <p className="text-[10px] text-[#7A746B]">Desglose de ingresos según forma de pago (QR, Efectivo, Transferencia, Tarjeta)</p>
               </div>
             </div>
 
-            {/* Delivery Type Split */}
-            <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-md">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE0]">
-                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
-                  <Truck className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold font-serif-remoda text-[#1C1C1C]">Tipo de Entrega</h3>
-                  <p className="text-[10px] text-[#7A746B]">Distribución de envíos vs. retiros en tienda</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                {[
-                  { label: 'Envío a Domicilio', count: filteredReportData.deliverySplitMap['Envío a domicilio'] || 0, icon: '🚚', gradient: 'from-blue-600 to-indigo-600' },
-                  { label: 'Retiro en Tienda', count: filteredReportData.deliverySplitMap['Retiro en tienda'] || 0, icon: '🏪', gradient: 'from-emerald-600 to-teal-600' },
-                ].map((dt, idx) => (
-                  <div key={idx} className={`relative p-5 rounded-2xl bg-gradient-to-br ${dt.gradient} text-white overflow-hidden`}>
-                    <div className="absolute -bottom-4 -right-4 text-6xl opacity-15">{dt.icon}</div>
-                    <div className="relative z-10">
-                      <div className="text-3xl font-black font-serif-remoda">{dt.count}</div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-white/80 mt-1">{dt.label}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'QR / Código QR', amount: filteredReportData.paymentMethodsMap['QR'] || 0, color: 'from-emerald-500 to-teal-500', bgLight: 'bg-emerald-50', textColor: 'text-emerald-700', icon: '📱' },
+                { label: 'Efectivo', amount: filteredReportData.paymentMethodsMap['Efectivo'] || 0, color: 'from-amber-500 to-orange-500', bgLight: 'bg-amber-50', textColor: 'text-amber-700', icon: '💵' },
+                { label: 'Transferencia', amount: filteredReportData.paymentMethodsMap['Transferencia'] || 0, color: 'from-blue-500 to-indigo-500', bgLight: 'bg-blue-50', textColor: 'text-blue-700', icon: '🏦' },
+                { label: 'Tarjeta / Otro', amount: filteredReportData.paymentMethodsMap['Tarjeta / Otro'] || 0, color: 'from-purple-500 to-pink-500', bgLight: 'bg-purple-50', textColor: 'text-purple-700', icon: '💳' },
+              ].map((method, idx) => {
+                const maxAmount = Math.max(...Object.values(filteredReportData.paymentMethodsMap), 1);
+                const pct = Math.round((method.amount / (filteredReportData.totalRevenue || 1)) * 100);
+                return (
+                  <div key={idx} className={`p-4 rounded-2xl ${method.bgLight} border border-opacity-50 hover:scale-[1.01] transition-transform`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-lg">{method.icon}</span>
+                        <span className="text-xs font-bold text-[#1C1C1C]">{method.label}</span>
+                      </div>
+                      <span className={`text-[10px] font-extrabold ${method.textColor} bg-white px-2 py-0.5 rounded-md`}>{pct}%</span>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Ventas por Semana Mini Chart */}
-              <div className="mt-4">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#7A746B] mb-3">Tendencia Semanal</div>
-                <div className="h-40 rounded-2xl bg-gradient-to-br from-[#FBF8F3] to-[#F7F4EE] p-2 border border-[#E8E1D5]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={filteredReportData.chartData} barSize={20}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E8E1D5" vertical={false} />
-                      <XAxis dataKey="period" tick={{ fontSize: 10, fill: '#7A746B' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#7A746B' }} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ borderRadius: '12px', border: '1px solid #E8E1D5', fontSize: '11px', fontWeight: 700 }}
-                        formatter={(val) => [`Bs. ${val}`, 'Ventas']}
+                    <div className="text-base font-black text-[#1C1C1C] mb-2">Bs. {method.amount.toLocaleString()}</div>
+                    <div className="w-full bg-white rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${method.color} transition-all duration-1000`}
+                        style={{ width: `${Math.max((method.amount / maxAmount) * 100, method.amount > 0 ? 8 : 0)}%` }}
                       />
-                      <Bar dataKey="ventas" radius={[8, 8, 0, 0]} fill="url(#barGradient)" />
-                      <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#1E5128" />
-                          <stop offset="100%" stopColor="#2D7A3E" />
-                        </linearGradient>
-                      </defs>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ═══ TOP PRODUCTS & CATEGORY PIE ═══════════════════════════════ */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-            {/* Top Products */}
-            <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-md">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE0]">
-                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200">
-                  <TrendingUp className="w-5 h-5 text-[#1E5128]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold font-serif-remoda text-[#1C1C1C]">Productos Más Vendidos</h3>
-                  <p className="text-[10px] text-[#7A746B]">Ranking de prendas con mayor demanda</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {filteredReportData.topProducts.map((prod, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-3 rounded-2xl bg-[#FBF8F3] hover:bg-[#F7F4EE] border border-transparent hover:border-[#E8E1D5] transition-all group">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#1E5128] to-emerald-600 text-white flex items-center justify-center text-xs font-black shadow-md">
-                      {idx + 1}
-                    </div>
-                    <img
-                      src={prod.image}
-                      alt={prod.name}
-                      className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm group-hover:scale-105 transition-transform"
-                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80'; }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-[#1C1C1C] truncate">{prod.name}</div>
-                      <div className="text-[10px] text-[#7A746B]">{prod.category}</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-xs font-black text-[#1E5128]">Bs. {prod.revenue.toLocaleString()}</div>
-                      <div className="text-[10px] text-[#7A746B]">{prod.quantity} uds.</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Category Pie Chart */}
-            <div className="bg-white rounded-3xl p-6 border border-[#E8E1D5] shadow-md">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE0]">
-                <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
-                  <Layers className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold font-serif-remoda text-[#1C1C1C]">Por Categoría</h3>
-                  <p className="text-[10px] text-[#7A746B]">Distribución de ingresos</p>
-                </div>
-              </div>
-
-              <div className="h-52">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={filteredReportData.categoryChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={75}
-                      paddingAngle={4}
-                      dataKey="value"
-                      strokeWidth={0}
-                    >
-                      {filteredReportData.categoryChartData.map((_, i) => (
-                        <Cell key={i} fill={['#1E5128', '#C85A2A', '#6B46C1', '#0891B2', '#D97706', '#DB2777'][i % 6]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ borderRadius: '12px', border: '1px solid #E8E1D5', fontSize: '11px', fontWeight: 700 }}
-                      formatter={(val) => [`Bs. ${val}`, 'Ingresos']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="space-y-2 mt-2">
-                {filteredReportData.categoryChartData.map((cat, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: ['#1E5128', '#C85A2A', '#6B46C1', '#0891B2', '#D97706', '#DB2777'][i % 6] }} />
-                      <span className="font-semibold text-[#5A544C]">{cat.name}</span>
-                    </div>
-                    <span className="font-bold text-[#1C1C1C]">Bs. {cat.value.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
 
