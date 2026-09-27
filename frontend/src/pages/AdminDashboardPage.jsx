@@ -862,7 +862,7 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
               { id: 'recolecciones', label: 'Recolecciones Ropa', icon: Recycle, count: collections.length, emoji: '♻️' },
               { id: 'cupones', label: 'Cupones & Promos', icon: Tag, count: coupons.length, emoji: '🎫' },
               { id: 'usuarios', label: 'Usuarios', icon: Users, count: users.length, emoji: '👥' },
-              { id: 'reportes', label: 'Reportes y Métricas', icon: FileText, emoji: '📈' },
+              { id: 'reportes', label: 'Reportes', icon: FileText, emoji: '📊' },
               { id: 'configuracion', label: 'Configuración del Sistema', icon: Settings, emoji: '⚙️' },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -946,16 +946,16 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
               <span className="text-[10px] text-stone-400 font-medium">• Panel de Administración ReModa</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold font-serif-remoda text-[#1C1C1C] mt-1">
-              {activeTab === 'dashboard' && 'Dashboard General & Métricas'}
-              {activeTab === 'categorias' && 'Gestión de Categorías'}
-              {activeTab === 'productos' && 'Gestión de Productos'}
-              {activeTab === 'vendidos' && 'Prendas Vendidas & Salida de Inventario'}
-              {activeTab === 'pedidos' && 'Pedidos E-Commerce'}
-              {activeTab === 'recolecciones' && 'Recolecciones de Ropa Usada'}
-              {activeTab === 'cupones' && 'Cupones de Descuento & Promociones'}
-              {activeTab === 'usuarios' && 'Gestión de Usuarios'}
-              {activeTab === 'reportes' && 'Centro de Reportes y Estadísticas por Mes'}
-              {activeTab === 'configuracion' && 'Configuración del Sistema'}
+              {activeTab === 'dashboard' && 'Dashboard'}
+              {activeTab === 'categorias' && 'Categorías'}
+              {activeTab === 'productos' && 'Productos'}
+              {activeTab === 'vendidos' && 'Prendas Vendidas'}
+              {activeTab === 'pedidos' && 'Pedidos'}
+              {activeTab === 'recolecciones' && 'Recolecciones'}
+              {activeTab === 'cupones' && 'Cupones'}
+              {activeTab === 'usuarios' && 'Usuarios'}
+              {activeTab === 'reportes' && 'Reportes'}
+              {activeTab === 'configuracion' && 'Configuración'}
             </h1>
             <p className="text-xs text-[#7A746B] mt-1">
               Control centralizado en tiempo real con sincronización automática en la base de datos.
@@ -978,11 +978,11 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
           </div>
         </div>
 
-        {/* Quick Horizontal Tab Bar for Easy Switching on All Screens */}
+        {/* Quick Horizontal Tab Bar */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {[
             { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
-            { id: 'reportes', label: '📈 Reportes por Mes', emoji: '📈', highlight: true },
+            { id: 'reportes', label: 'Reportes', emoji: '📈' },
             { id: 'productos', label: 'Productos', emoji: '👕' },
             { id: 'vendidos', label: 'Vendidos', emoji: '🏷️' },
             { id: 'pedidos', label: 'Pedidos', emoji: '📦' },
@@ -1000,8 +1000,6 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                 className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-[#1E5128] text-white shadow-md shadow-[#1E5128]/25 scale-105'
-                    : tab.highlight
-                    ? 'bg-emerald-50 text-[#1E5128] border border-emerald-300 hover:bg-emerald-100 font-extrabold'
                     : 'bg-white text-[#5A544C] border border-[#E8E1D5] hover:bg-[#F4EFE6] hover:text-[#1C1C1C]'
                 }`}
               >
