@@ -59,10 +59,17 @@ import {
   X,
   Download,
   Filter,
-  Calendar,
   Printer,
   CreditCard,
   Truck,
+  Upload,
+  ImagePlus,
+  ClipboardPaste,
+  ExternalLink,
+  RefreshCw,
+  Scissors,
+  ArrowRight,
+  RotateCcw,
 } from 'lucide-react';
 import { api, clearApiCache } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -129,7 +136,7 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [catName, setCatName] = useState('');
   const [catDesc, setCatDesc] = useState('');
-  const [catImage, setCatImage] = useState('https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80');
+  const [catImage, setCatImage] = useState('');
   const [catBanner, setCatBanner] = useState('');
   const [catColor, setCatColor] = useState('#1E5128');
   const [catSeason, setCatSeason] = useState('Todo el año');
@@ -138,26 +145,34 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
   const [catIsActive, setCatIsActive] = useState(true);
   const [catMetaTitle, setCatMetaTitle] = useState('');
   const [catMetaDescription, setCatMetaDescription] = useState('');
+  const [isUploadingCatImage, setIsUploadingCatImage] = useState(false);
+  const [catDragActive, setCatDragActive] = useState(false);
+  const [catImageMode, setCatImageMode] = useState('upload'); // 'upload' | 'url'
+  const catFileInputRef = React.useRef(null);
 
   // Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [prodName, setProdName] = useState('');
   const [prodCategory, setProdCategory] = useState(1);
-  const [prodPrice, setProdPrice] = useState(185);
+  const [prodPrice, setProdPrice] = useState('');
   const [prodOriginalPrice, setProdOriginalPrice] = useState('');
   const [prodDiscountPercent, setProdDiscountPercent] = useState('');
-  const [prodStock, setProdStock] = useState(5);
+  const [prodStock, setProdStock] = useState('');
   const [prodSize, setProdSize] = useState('Talla única');
-  const [prodColor, setProdColor] = useState('Azul Denim');
+  const [prodColor, setProdColor] = useState('');
   const [prodMaterial, setProdMaterial] = useState('Denim');
   const [prodTransformation, setProdTransformation] = useState('Transformado');
-  const [prodStory, setProdStory] = useState('Fabricada a partir de 2 jeans reutilizados');
-  const [prodBadge, setProdBadge] = useState('Más vendido');
-  const [prodDesc, setProdDesc] = useState('Confeccionada con materiales seleccionados y reforzados.');
-  const [prodImage, setProdImage] = useState('https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80');
-  const [prodIsFeatured, setProdIsFeatured] = useState(true);
+  const [prodStory, setProdStory] = useState('');
+  const [prodBadge, setProdBadge] = useState('');
+  const [prodDesc, setProdDesc] = useState('');
+  const [prodImage, setProdImage] = useState('');
+  const [prodIsFeatured, setProdIsFeatured] = useState(false);
   const [prodIsNew, setProdIsNew] = useState(false);
+  const [imageInputMode, setImageInputMode] = useState('upload'); // 'upload' | 'url'
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   // Coupon Modal State
   const [showCouponModal, setShowCouponModal] = useState(false);
@@ -179,6 +194,43 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [soldSearchTerm, setSoldSearchTerm] = useState('');
   const [userModalLoading, setUserModalLoading] = useState(false);
+
+  // Product Filter State (RF-010, RF-012)
+  const [adminProdCategoryFilter, setAdminProdCategoryFilter] = useState('todas');
+  const [adminProdSearch, setAdminProdSearch] = useState('');
+  const [adminProdStatusFilter, setAdminProdStatusFilter] = useState('all'); // 'all' | 'active' | 'hidden' | 'low_stock'
+
+  const filteredAdminProducts = useMemo(() => {
+    return products.filter((p) => {
+      // Category filter
+      if (adminProdCategoryFilter !== 'todas') {
+        const catMatch = 
+          String(p.category_id) === String(adminProdCategoryFilter) ||
+          String(p.category?.id) === String(adminProdCategoryFilter) ||
+          (p.category?.name && p.category.name.toLowerCase() === String(adminProdCategoryFilter).toLowerCase()) ||
+          (p.category?.slug && p.category.slug.toLowerCase() === String(adminProdCategoryFilter).toLowerCase());
+        if (!catMatch) return false;
+      }
+      // Status filter
+      if (adminProdStatusFilter === 'active' && !p.is_active) return false;
+      if (adminProdStatusFilter === 'hidden' && p.is_active) return false;
+      if (adminProdStatusFilter === 'low_stock' && p.stock > 2) return false;
+      
+      // Search query
+      if (adminProdSearch.trim()) {
+        const term = adminProdSearch.toLowerCase().trim();
+        const nameMatch = p.name?.toLowerCase().includes(term);
+        const catNameMatch = p.category?.name?.toLowerCase().includes(term);
+        const matMatch = p.material?.toLowerCase().includes(term);
+        const transMatch = p.transformation_type?.toLowerCase().includes(term);
+        const storyMatch = p.origin_story?.toLowerCase().includes(term);
+        const badgeMatch = p.badge?.toLowerCase().includes(term);
+        const sizeMatch = p.size?.toLowerCase().includes(term);
+        if (!nameMatch && !catNameMatch && !matMatch && !transMatch && !storyMatch && !badgeMatch && !sizeMatch) return false;
+      }
+      return true;
+    });
+  }, [products, adminProdCategoryFilter, adminProdStatusFilter, adminProdSearch]);
 
   // Compute sold items from orders and zero stock / sold products
   const soldItemsList = useMemo(() => {
@@ -517,7 +569,7 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
     setEditingCategory(null);
     setCatName('');
     setCatDesc('');
-    setCatImage('https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80');
+    setCatImage('');
     setCatBanner('');
     setCatColor('#1E5128');
     setCatSeason('Todo el año');
@@ -526,7 +578,90 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
     setCatIsActive(true);
     setCatMetaTitle('');
     setCatMetaDescription('');
+    setIsUploadingCatImage(false);
+    setCatDragActive(false);
+    setCatImageMode('upload');
     setShowCategoryModal(true);
+  };
+
+  const handleUploadCategoryImageFile = async (file) => {
+    if (!file) {
+      showToast('Selecciona un archivo de imagen válido (PNG, JPG, WEBP, GIF)', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64Data = ev.target.result;
+      setCatImage(base64Data);
+      setIsUploadingCatImage(true);
+      showToast('Procesando fotografía de categoría...', 'info');
+      try {
+        const res = await api.uploadImage(base64Data);
+        if (res && res.url) {
+          setCatImage(res.url);
+          showToast('¡Fotografía de categoría guardada!');
+        }
+      } catch (err) {
+        console.warn('Manteniendo imagen base64 de categoría tras:', err);
+        setCatImage(base64Data);
+        showToast('Fotografía lista para la categoría');
+      } finally {
+        setIsUploadingCatImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCategoryModalPaste = (e) => {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+    const items = clipboardData.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.startsWith('image/')) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) { handleUploadCategoryImageFile(file); return; }
+        }
+      }
+    }
+    const pastedText = clipboardData.getData('text');
+    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://') || pastedText.startsWith('data:image/'))) {
+      const isImgUrl = /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(pastedText) || pastedText.includes('images.unsplash.com') || pastedText.includes('images.pexels.com');
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (isImgUrl && activeTag !== 'input' && activeTag !== 'textarea') {
+        e.preventDefault();
+        setCatImage(pastedText.trim());
+        showToast('¡Enlace de imagen de categoría pegado!');
+      }
+    }
+  };
+
+  const handleClipboardPasteCatButtonClick = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find(t => t.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            handleUploadCategoryImageFile(blob);
+            return;
+          }
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
+          setCatImage(text.trim());
+          showToast('¡Enlace pegado desde el portapapeles!');
+          return;
+        }
+      }
+      showToast('Copia una foto o URL y presiona Ctrl+V', 'info');
+    } catch {
+      showToast('Presiona Ctrl+V en el teclado para pegar', 'info');
+    }
   };
 
   const handleOpenEditCategory = (cat) => {
@@ -618,20 +753,22 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
     setEditingProduct(null);
     setProdName('');
     setProdCategory(categories[0]?.id || 1);
-    setProdPrice(185);
-    setProdOriginalPrice(240);
-    setProdDiscountPercent(23);
-    setProdStock(5);
-    setProdSize('Talla única');
-    setProdColor('Azul Denim');
-    setProdMaterial('Denim');
-    setProdTransformation('Transformado');
-    setProdStory('Fabricada a partir de 2 jeans reutilizados');
-    setProdBadge('Más vendido');
-    setProdDesc('Prenda sustentable upcycled.');
-    setProdImage('https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80');
-    setProdIsFeatured(true);
+    setProdPrice('');
+    setProdOriginalPrice('');
+    setProdDiscountPercent('');
+    setProdStock('');
+    setProdSize('');
+    setProdColor('');
+    setProdMaterial('');
+    setProdTransformation('');
+    setProdStory('');
+    setProdBadge('');
+    setProdDesc('');
+    setProdImage('');
+    setProdIsFeatured(false);
     setProdIsNew(false);
+    setImageInputMode('upload');
+    setDragActive(false);
     setShowProductModal(true);
   };
 
@@ -691,6 +828,117 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
       setProdDiscountPercent(Math.round(((Number(numVal) - prodPrice) / Number(numVal)) * 100));
     } else {
       setProdDiscountPercent('');
+    }
+  };
+
+  const handleUploadProductImageFile = async (file) => {
+    if (!file) {
+      showToast('Selecciona un archivo de imagen válido (PNG, JPG, WEBP, GIF)', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64Data = ev.target.result;
+      // Immediately set the base64 preview so user NEVER sees a blank box
+      setProdImage(base64Data);
+      setIsUploadingImage(true);
+      showToast('Procesando fotografía...', 'info');
+
+      try {
+        const res = await api.uploadImage(base64Data);
+        if (res && res.url) {
+          setProdImage(res.url);
+          showToast('¡Fotografía guardada con éxito!');
+        }
+      } catch (err) {
+        console.warn('Manteniendo imagen base64 tras:', err);
+        setProdImage(base64Data);
+        showToast('Fotografía cargada para la prenda');
+      } finally {
+        setIsUploadingImage(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProductModalPaste = (e) => {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+
+    // Check if an image file was copied
+    const items = clipboardData.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.startsWith('image/')) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) {
+            handleUploadProductImageFile(file);
+            return;
+          }
+        }
+      }
+    }
+
+    // Check if text is an image URL
+    const pastedText = clipboardData.getData('text');
+    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://') || pastedText.startsWith('data:image/'))) {
+      const isImgUrl = /\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i.test(pastedText) || pastedText.includes('images.unsplash.com');
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (isImgUrl && activeTag !== 'input' && activeTag !== 'textarea') {
+        e.preventDefault();
+        setProdImage(pastedText.trim());
+        showToast('¡Enlace de imagen pegado con éxito!');
+      }
+    }
+  };
+
+  const handleDropProductImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleUploadProductImageFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOverProductImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeaveProductImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleClipboardPasteButtonClick = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find(type => type.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            handleUploadProductImageFile(blob);
+            return;
+          }
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
+          setProdImage(text.trim());
+          showToast('¡Enlace de imagen pegado desde el portapapeles!');
+          return;
+        }
+      }
+      showToast('Copia una foto o captura y presiona Ctrl+V', 'info');
+    } catch {
+      showToast('Presiona Ctrl+V en tu teclado para pegar directo', 'info');
     }
   };
 
@@ -762,6 +1010,41 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
         } catch (err) {
           setProducts(previousProducts);
           showToast('Error al eliminar el producto en el servidor', 'error');
+        }
+      }
+    });
+  };
+
+  const handleDeleteAllProducts = () => {
+    if (products.length === 0) {
+      showToast('No hay productos para eliminar', 'info');
+      return;
+    }
+    openConfirm({
+      title: '⚠️ ¿Eliminar TODOS los Productos?',
+      message: `Se eliminarán permanentemente los ${products.length} productos del catálogo. Esta acción no se puede deshacer.`,
+      confirmText: 'Sí, Eliminar Todos',
+      confirmColor: 'bg-rose-600 hover:bg-rose-700 shadow-rose-200',
+      icon: 'trash',
+      onConfirm: async () => {
+        closeConfirm();
+        const previousProducts = [...products];
+        setProducts([]);
+        showToast(`Eliminando ${previousProducts.length} productos...`, 'info');
+        let errors = 0;
+        for (const prod of previousProducts) {
+          try {
+            await api.deleteProduct(prod.id);
+          } catch {
+            errors++;
+          }
+        }
+        clearApiCache();
+        loadAll();
+        if (errors === 0) {
+          showToast('¡Todos los productos eliminados exitosamente!');
+        } else {
+          showToast(`${errors} productos no pudieron eliminarse`, 'error');
         }
       }
     });
@@ -1305,9 +1588,20 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                       </td>
                       <td className="px-4 py-3.5 border-b border-[#F0EBE0] text-xs text-[#5A544C] max-w-[280px]"><span className="line-clamp-2">{cat.description || 'Sin descripción ingresada.'}</span></td>
                       <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-[#1E5128]">
-                          {cat.products_count || 0} prendas
-                        </span>
+                        <button
+                          onClick={() => {
+                            setAdminProdCategoryFilter(String(cat.id));
+                            setAdminProdStatusFilter('all');
+                            setAdminProdSearch('');
+                            setActiveTab('productos');
+                          }}
+                          className="px-3 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[10px] font-bold text-[#1E5128] transition-all cursor-pointer inline-flex items-center gap-1.5 group/catbtn hover:shadow-sm active:scale-95"
+                          title={`Ver las ${cat.products_count || 0} prendas de la categoría ${cat.name}`}
+                        >
+                          <ShoppingBag className="w-3 h-3 text-[#1E5128]" />
+                          <span>{cat.products_count || 0} prendas</span>
+                          <ArrowRight className="w-2.5 h-2.5 opacity-60 group-hover/catbtn:translate-x-0.5 transition-transform" />
+                        </button>
                       </td>
                       <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700">
@@ -1365,13 +1659,127 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                   <span className="px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 text-[10px] font-bold text-red-700">Ocultos: {products.filter(p => !p.is_active).length}</span>
                 </div>
               </div>
-              <button
-                onClick={handleOpenNewProduct}
-                className="group inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C85A2A] to-amber-500 hover:from-[#b04d22] hover:to-amber-600 text-white text-xs font-bold transition-all shadow-lg shadow-[#C85A2A]/20 cursor-pointer active:scale-95"
-              >
-                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-                Registrar Nueva Prenda
-              </button>
+              <div className="flex items-center gap-2">
+                {products.length > 0 && (
+                  <button
+                    onClick={handleDeleteAllProducts}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                    title="Eliminar todos los productos de la base de datos"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Limpiar Catálogo
+                  </button>
+                )}
+                <button
+                  onClick={handleOpenNewProduct}
+                  className="group inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#C85A2A] to-amber-500 hover:from-[#b04d22] hover:to-amber-600 text-white text-xs font-bold transition-all shadow-lg shadow-[#C85A2A]/20 cursor-pointer active:scale-95"
+                >
+                  <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                  Registrar Nueva Prenda
+                </button>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="px-6 pb-4 pt-2 border-b border-[#F0EBE0] space-y-3 bg-[#FAF8F5]/60">
+              {/* Category selector pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+                <span className="text-[11px] font-extrabold text-[#7A746B] uppercase tracking-wider shrink-0 flex items-center gap-1">
+                  <Tag className="w-3.5 h-3.5 text-[#C85A2A]" /> Categoría:
+                </span>
+                <button
+                  onClick={() => setAdminProdCategoryFilter('todas')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 inline-flex items-center gap-1.5 ${
+                    adminProdCategoryFilter === 'todas'
+                      ? 'bg-[#1E5128] text-white shadow-sm scale-[1.02]'
+                      : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+                  }`}
+                >
+                  <span>🌟 Todas</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${adminProdCategoryFilter === 'todas' ? 'bg-white/25 text-white' : 'bg-stone-100 text-stone-500'}`}>
+                    {products.length}
+                  </span>
+                </button>
+                {categories.map((cat) => {
+                  const isSelected = String(adminProdCategoryFilter) === String(cat.id) || adminProdCategoryFilter.toLowerCase() === (cat.slug || '').toLowerCase() || adminProdCategoryFilter.toLowerCase() === cat.name.toLowerCase();
+                  const catCount = products.filter(p => String(p.category_id) === String(cat.id) || String(p.category?.id) === String(cat.id) || (p.category?.name && p.category.name.toLowerCase() === cat.name.toLowerCase())).length;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setAdminProdCategoryFilter(String(cat.id))}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 inline-flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-[#C85A2A] text-white shadow-sm scale-[1.02]'
+                          : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/25 text-white' : 'bg-stone-100 text-stone-500'}`}>
+                        {catCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Search & Status Filters */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="relative flex-1 min-w-[220px] max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="text"
+                    value={adminProdSearch}
+                    onChange={(e) => setAdminProdSearch(e.target.value)}
+                    placeholder="Buscar por nombre, tela, categoría, historia..."
+                    className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-xl text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#C85A2A] focus:ring-2 focus:ring-[#C85A2A]/10 transition-all"
+                  />
+                  {adminProdSearch && (
+                    <button
+                      onClick={() => setAdminProdSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-stone-400 hover:text-stone-700 rounded-full cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Status Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { id: 'all', label: 'Todos' },
+                    { id: 'active', label: 'En tienda' },
+                    { id: 'hidden', label: 'Ocultos' },
+                    { id: 'low_stock', label: 'Stock bajo (≤2)' },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      onClick={() => setAdminProdStatusFilter(st.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminProdStatusFilter === st.id
+                          ? 'bg-stone-800 text-white shadow-xs'
+                          : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+
+                  {(adminProdCategoryFilter !== 'todas' || adminProdSearch || adminProdStatusFilter !== 'all') && (
+                    <button
+                      onClick={() => {
+                        setAdminProdCategoryFilter('todas');
+                        setAdminProdSearch('');
+                        setAdminProdStatusFilter('all');
+                      }}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#C85A2A] hover:bg-orange-50 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                      title="Limpiar filtros"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="overflow-x-auto px-5 pb-5">
@@ -1387,7 +1795,7 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((p) => (
+                  {filteredAdminProducts.map((p) => (
                     <tr key={p.id} className="table-row-pro group">
                       <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
                         <div className="flex items-center gap-3 min-w-[250px]">
@@ -1403,7 +1811,13 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                         </div>
                       </td>
                       <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
-                        <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-[10px] font-bold text-[#C85A2A]">{p.category?.name || 'Sin categoría'}</span>
+                        <button
+                          onClick={() => setAdminProdCategoryFilter(String(p.category_id || p.category?.id || 'todas'))}
+                          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-[10px] font-bold text-[#C85A2A] transition-all cursor-pointer"
+                          title="Filtrar por esta categoría"
+                        >
+                          {p.category?.name || 'Sin categoría'}
+                        </button>
                       </td>
                       <td className="px-4 py-3.5 border-b border-[#F0EBE0]">
                         <div className="font-black text-[#1E5128] text-sm">Bs. {parseFloat(p.price).toFixed(0)}</div>
@@ -1443,6 +1857,30 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                   ))}
                 </tbody>
               </table>
+
+              {/* Empty state when no products match filters */}
+              {products.length > 0 && filteredAdminProducts.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="w-14 h-14 mx-auto bg-stone-100 rounded-2xl flex items-center justify-center mb-3">
+                    <Search className="w-6 h-6 text-stone-400" />
+                  </div>
+                  <p className="font-bold text-stone-700 mb-1">No se encontraron prendas con estos filtros</p>
+                  <p className="text-xs text-stone-500 mb-4">Prueba seleccionando otra categoría o limpiando la búsqueda.</p>
+                  <button
+                    onClick={() => {
+                      setAdminProdCategoryFilter('todas');
+                      setAdminProdSearch('');
+                      setAdminProdStatusFilter('all');
+                    }}
+                    className="px-4 py-2 bg-stone-800 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-stone-700 transition-all inline-flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Mostrar todas las prendas ({products.length})
+                  </button>
+                </div>
+              )}
+
+              {/* Empty state when catalog is empty */}
               {products.length === 0 && (
                 <div className="text-center py-16">
                   <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4">
@@ -2540,7 +2978,7 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
               </div>
             </div>
             
-            <form onSubmit={handleSaveCategory} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveCategory} className="space-y-3.5 text-xs" onPaste={handleCategoryModalPaste}>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 p-4 rounded-2xl bg-white border border-[#E8E1D5]">
                 <div className="space-y-1">
                   <label className="font-semibold text-[#1C1C1C]">Nombre de la Categoría *</label>
@@ -2602,35 +3040,135 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
                 <input type="checkbox" checked={catIsActive} onChange={(e) => setCatIsActive(e.target.checked)} className="w-5 h-5 accent-[#1E5128] cursor-pointer" />
               </label>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-[#1C1C1C]">URL de Fotografía Representativa:</label>
-                <input
-                  type="text"
-                  placeholder="https://images.unsplash.com/..."
-                  value={catImage}
-                  onChange={(e) => setCatImage(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128]"
-                />
+              {/* ── FOTOGRAFÍA DE CATEGORÍA: DROPZONE + PASTE + URL ── */}
+              <div className="space-y-2 p-4 bg-white rounded-3xl border border-[#E8E1D5] shadow-xs">
+                <div className="flex items-center justify-between pb-1 border-b border-stone-100">
+                  <label className="font-bold text-[#1C1C1C] text-[11px] uppercase tracking-wide flex items-center gap-1.5">
+                    <ImagePlus className="w-3.5 h-3.5 text-[#C85A2A]" />
+                    Fotografía Representativa de la Categoría
+                  </label>
+                  <div className="flex items-center gap-1 bg-stone-100 rounded-xl p-0.5">
+                    <button type="button" onClick={() => setCatImageMode('upload')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                        catImageMode === 'upload' ? 'bg-white text-[#1E5128] shadow-xs' : 'text-stone-500 hover:text-stone-700'
+                      }`}>
+                      <Upload className="w-3 h-3" /> Subir
+                    </button>
+                    <button type="button" onClick={() => setCatImageMode('url')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                        catImageMode === 'url' ? 'bg-white text-[#1E5128] shadow-xs' : 'text-stone-500 hover:text-stone-700'
+                      }`}>
+                      <ExternalLink className="w-3 h-3" /> URL
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dropzone */}
+                <div
+                  onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setCatDragActive(false); if (e.dataTransfer.files?.[0]) handleUploadCategoryImageFile(e.dataTransfer.files[0]); }}
+                  onDragOver={(e) => { e.preventDefault(); setCatDragActive(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); setCatDragActive(false); }}
+                  className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 overflow-hidden ${
+                    catDragActive
+                      ? 'border-[#C85A2A] bg-amber-50/80 scale-[1.01]'
+                      : catImage
+                      ? 'border-[#1E5128]/40 bg-[#F0F7F1]'
+                      : 'border-[#DDD5C7] bg-[#FBF8F3] hover:border-[#C85A2A]/60 hover:bg-amber-50/30'
+                  }`}
+                >
+                  {isUploadingCatImage && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-[3px] border-[#1E5128] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs font-bold text-[#1E5128]">Subiendo imagen...</span>
+                      </div>
+                    </div>
+                  )}
+                  {catImage ? (
+                    <div className="relative">
+                      <img src={catImage} alt="Vista previa" className="w-full h-48 object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                        <span className="text-white text-[10px] font-bold bg-black/40 px-2.5 py-1 rounded-lg backdrop-blur-sm">
+                          ✓ Fotografía lista
+                        </span>
+                        <div className="flex gap-1.5">
+                          <button type="button" onClick={() => catFileInputRef.current?.click()}
+                            className="p-1.5 bg-white/90 text-stone-700 rounded-xl shadow-md hover:bg-white transition-all cursor-pointer" title="Cambiar imagen">
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" onClick={() => setCatImage('')}
+                            className="p-1.5 bg-rose-600 text-white rounded-xl shadow-md hover:bg-rose-700 transition-all cursor-pointer" title="Quitar imagen">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6 flex flex-col items-center justify-center text-center space-y-3 min-h-[160px]">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#C85A2A] border border-amber-100 flex items-center justify-center shadow-xs">
+                        <ImagePlus className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-[#1C1C1C]">
+                          Pega una imagen con <span className="text-[#C85A2A]">Ctrl+V</span>
+                        </p>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                          o arrastra una foto aquí · o usa los botones abajo
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <button type="button" onClick={() => catFileInputRef.current?.click()}
+                          className="px-3.5 py-1.5 bg-[#1E5128] text-white rounded-xl font-bold text-xs hover:bg-[#163E1F] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                          <Upload className="w-3.5 h-3.5" /> Subir archivo
+                        </button>
+                        <button type="button" onClick={handleClipboardPasteCatButtonClick}
+                          className="px-3 py-1.5 bg-white text-stone-700 border border-stone-300 rounded-xl font-bold text-xs hover:bg-stone-50 transition-all flex items-center gap-1.5 cursor-pointer">
+                          <ClipboardPaste className="w-3.5 h-3.5 text-[#C85A2A]" /> Pegar portapapeles
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-stone-400">PNG, JPG, WEBP, GIF hasta 15MB</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Hidden file input */}
+                <input type="file" ref={catFileInputRef} accept="image/*"
+                  onChange={(e) => { if (e.target.files?.[0]) { handleUploadCategoryImageFile(e.target.files[0]); e.target.value = ''; } }}
+                  className="hidden" />
+
+                {/* URL input mode */}
+                {catImageMode === 'url' && (
+                  <div className="space-y-1.5 animate-fade-in">
+                    <label className="font-bold text-stone-700 text-[11px] flex items-center justify-between">
+                      <span>URL directa de la fotografía:</span>
+                      {catImage && (
+                        <button type="button" onClick={() => setCatImage('')} className="text-[10px] text-rose-600 hover:underline cursor-pointer">Limpiar</button>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <input type="url" placeholder="https://images.unsplash.com/..."
+                        value={catImage} onChange={(e) => setCatImage(e.target.value)}
+                        className="w-full p-2.5 pr-8 bg-stone-50 border border-[#DDD5C7] rounded-xl text-xs outline-none focus:border-[#1E5128] focus:bg-white" />
+                      {catImage && (
+                        <a href={catImage} target="_blank" rel="noreferrer"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {catImage && (
-                <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 border">
-                  <img src={catImage} alt="Vista previa" className="w-full h-full object-cover" />
-                </div>
-              )}
-
               <div className="flex justify-end gap-2 pt-2 border-t border-[#EAE3D5]">
-                <button
-                  type="button"
-                  onClick={() => setShowCategoryModal(false)}
-                  className="px-4 py-2 border border-[#DDD5C7] rounded-xl text-[#4A4A4A]"
-                >
+                <button type="button" onClick={() => setShowCategoryModal(false)}
+                  className="px-5 py-2.5 border border-[#DDD5C7] rounded-xl text-[#4A4A4A] font-bold hover:bg-stone-100 transition-all cursor-pointer">
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#1E5128] text-white rounded-xl font-semibold hover:bg-[#163E1F]"
-                >
+                <button type="submit" disabled={isUploadingCatImage}
+                  className="px-6 py-2.5 bg-gradient-to-r from-[#1E5128] to-[#163E1F] hover:from-[#163E1F] hover:to-[#0F2B15] text-white rounded-xl font-bold text-xs shadow-lg hover:shadow-emerald-900/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  <Check className="w-4 h-4" />
                   {editingCategory ? 'Actualizar Categoría' : 'Crear Categoría'}
                 </button>
               </div>
@@ -2639,306 +3177,666 @@ export const AdminDashboardPage = ({ setCurrentTab }) => {
         </div>
       )}
 
-      {/* ================= PRODUCT MODAL WITH FULL PRICE FORM ================= */}
+      {/* ================= PRODUCT MODAL WITH HIGH-STYLE ATELIER & DIRECT PASTE ================= */}
       {showProductModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#FBF8F3] rounded-3xl max-w-2xl w-full p-6 sm:p-8 border border-[#E8E1D5] space-y-5 shadow-2xl my-8 animate-fade-in max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fade-in"
+          onPaste={handleProductModalPaste}
+        >
+          <div className="bg-[#FCFAF6] rounded-[2.2rem] max-w-5xl w-full border border-[#E5DDD0] shadow-2xl my-auto flex flex-col max-h-[94vh] overflow-hidden">
             
-            <div>
-              <span className="text-xs uppercase font-bold tracking-wider text-[#C85A2A]">Formulario de Catálogo</span>
-              <h3 className="text-xl font-bold font-serif-remoda text-[#1C1C1C]">
-                {editingProduct ? 'Editar Prenda & Precios' : 'Registrar Nueva Prenda Upcycled'}
-              </h3>
-            </div>
-
-            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
-              
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Nombre del Producto:</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej: Mochila Denim Revival"
-                    value={prodName}
-                    onChange={(e) => setProdName(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128]"
-                  />
+            {/* Modal Top Header */}
+            <div className="px-6 sm:px-8 py-5 border-b border-[#EBE4D8] bg-gradient-to-r from-[#F9F5EE] via-[#FAF6F0] to-[#F4EFE6] flex items-center justify-between gap-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#1E5128]/10 text-[#1E5128] flex items-center justify-center font-bold shadow-xs">
+                  <Scissors className="w-5 h-5" />
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Categoría:</label>
-                  <select
-                    value={prodCategory}
-                    onChange={(e) => setProdCategory(Number(e.target.value))}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128]"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* FORMULARIO DE PRECIOS Y DESCUENTOS % */}
-              <div className="p-5 bg-gradient-to-br from-white to-[#FBF8F3] rounded-2xl border border-[#E8E1D5] shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-extrabold text-[#1E5128] uppercase tracking-wider">
-                    <DollarSign className="w-4 h-4 text-[#C85A2A]" />
-                    <span>Precios, Descuentos (%) & Ofertas Especiales</span>
-                  </div>
-                  {prodDiscountPercent > 0 && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r from-red-600 to-[#C85A2A] shadow-xs animate-pulse">
-                      🔥 -{prodDiscountPercent}% OFF
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-[#C85A2A] bg-orange-100/70 px-2 py-0.5 rounded-full border border-orange-200">
+                      Atelier ReModa · Catálogo Upcycling
                     </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  {/* Precio de venta */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-[#1C1C1C] text-[11px] block">Precio Oferta / Venta (Bs.): *</label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="1"
-                      required
-                      placeholder="185"
-                      value={prodPrice}
-                      onChange={(e) => handleSalePriceChangeInput(e.target.value)}
-                      className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl font-black text-base text-[#1E5128] outline-none focus:border-[#1E5128] focus:ring-2 focus:ring-emerald-100"
-                    />
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <Sparkles className="w-3 h-3 text-[#1E5128]" /> Trazabilidad RF-015
+                    </span>
                   </div>
-
-                  {/* % Descuento */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-[#C85A2A] text-[11px] block">% Descuento Directo:</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="1"
-                        min="0"
-                        max="90"
-                        placeholder="Ej: 20"
-                        value={prodDiscountPercent}
-                        onChange={(e) => handleApplyDiscountPercent(e.target.value)}
-                        className="w-full p-2.5 pr-8 bg-amber-50/50 border border-amber-300 rounded-xl font-black text-base text-[#C85A2A] outline-none focus:border-[#C85A2A]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-amber-700 text-xs">%</span>
-                    </div>
-                  </div>
-
-                  {/* Precio Original Tachado */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-[#7A746B] text-[11px] block">Precio Original (Bs.):</label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      placeholder="Ej: 240"
-                      value={prodOriginalPrice}
-                      onChange={(e) => handleOriginalPriceChangeInput(e.target.value)}
-                      className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl font-bold text-sm text-[#7A746B] outline-none"
-                    />
-                  </div>
-
-                  {/* Stock */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-[#1C1C1C] text-[11px] block">Stock Disponible (Uds): *</label>
-                    <input
-                      type="number"
-                      min="0"
-                      required
-                      placeholder="5"
-                      value={prodStock}
-                      onChange={(e) => setProdStock(Number(e.target.value))}
-                      className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none font-black text-sm text-[#1C1C1C]"
-                    />
-                  </div>
-                </div>
-
-                {/* Quick Discount Percentage Pills */}
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  <span className="text-[10px] font-bold text-[#7A746B] mr-1">Aplicar % rápido:</span>
-                  {[
-                    { label: 'Sin oferta', value: 0 },
-                    { label: '-10%', value: 10 },
-                    { label: '-15%', value: 15 },
-                    { label: '-20%', value: 20 },
-                    { label: '-25%', value: 25 },
-                    { label: '-30%', value: 30 },
-                    { label: '-50%', value: 50 },
-                  ].map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => handleApplyDiscountPercent(p.value)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                        Number(prodDiscountPercent) === p.value
-                          ? 'bg-[#C85A2A] text-white shadow-xs scale-105'
-                          : 'bg-stone-100 hover:bg-amber-100 text-stone-700 border border-stone-200'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Live Offer Preview Banner */}
-                {prodOriginalPrice && Number(prodOriginalPrice) > prodPrice ? (
-                  <div className="p-3 bg-gradient-to-r from-amber-50 to-emerald-50 rounded-xl border border-amber-200 text-xs text-[#1E5128] font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-[#C85A2A] text-white text-[10px] font-black rounded-md uppercase tracking-wider">
-                        🔥 Oferta confirmada
-                      </span>
-                      <span>El cliente ahorrará <strong className="text-[#C85A2A]">Bs. {(Number(prodOriginalPrice) - prodPrice).toFixed(0)}</strong> ({Math.round(((Number(prodOriginalPrice) - prodPrice) / Number(prodOriginalPrice)) * 100)}% de descuento)</span>
-                    </div>
-                    <div className="text-[11px] font-mono text-stone-600">
-                      Bs. <span className="line-through text-stone-400">{Number(prodOriginalPrice).toFixed(0)}</span> ➔ <strong className="text-[#1E5128] text-xs">Bs. {prodPrice}</strong>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200 text-[11px] text-[#7A746B] italic">
-                    Sin descuento aplicado. Ingresa un % o precio original superior al precio de oferta para mostrar la insignia en tienda.
-                  </div>
-                )}
-              </div>
-
-              {/* Textile Specs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Talla:</label>
-                  <select
-                    value={prodSize}
-                    onChange={(e) => setProdSize(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                  >
-                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Talla única'].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Material:</label>
-                  <select
-                    value={prodMaterial}
-                    onChange={(e) => setProdMaterial(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                  >
-                    {['Denim', 'Algodón', 'Lana', 'Mezcla', 'Poliéster', 'Lino'].map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Color:</label>
-                  <input
-                    type="text"
-                    value={prodColor}
-                    onChange={(e) => setProdColor(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Proceso:</label>
-                  <select
-                    value={prodTransformation}
-                    onChange={(e) => setProdTransformation(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                  >
-                    {['Transformado', 'Innovado', 'Reutilizado'].map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <h3 className="text-xl sm:text-2xl font-bold font-serif-remoda text-[#1C1C1C] mt-0.5">
+                    {editingProduct ? 'Editar Prenda & Estrategia de Precios' : 'Registrar Nueva Prenda Upcycled'}
+                  </h3>
                 </div>
               </div>
 
-              {/* Origin Story & Badge */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Historia de Origen / Trazabilidad (RF-015):</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Fabricada a partir de 2 jeans reutilizados"
-                    value={prodStory}
-                    onChange={(e) => setProdStory(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                  />
+              <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50/80 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 font-semibold shadow-2xs">
+                  <ClipboardPaste className="w-3.5 h-3.5 text-[#C85A2A]" />
+                  <span>Pega fotos con <kbd className="px-1.5 py-0.5 bg-white border border-amber-300 rounded font-mono font-bold text-[10px]">Ctrl+V</kbd></span>
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-[#1C1C1C]">Distintivo / Badge:</label>
-                  <select
-                    value={prodBadge}
-                    onChange={(e) => setProdBadge(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                  >
-                    <option value="">Sin distintivo</option>
-                    <option value="Más vendido">Más vendido</option>
-                    <option value="Edición limitada">Edición limitada</option>
-                    <option value="Nuevo">Nuevo</option>
-                    <option value="¡Últimas!">¡Últimas!</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Description & Image */}
-              <div className="space-y-1">
-                <label className="font-semibold text-[#1C1C1C]">Descripción completa:</label>
-                <textarea
-                  rows={2}
-                  value={prodDesc}
-                  onChange={(e) => setProdDesc(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-[#1C1C1C]">URL de Fotografía del Producto:</label>
-                <input
-                  type="text"
-                  value={prodImage}
-                  onChange={(e) => setProdImage(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none"
-                />
-              </div>
-
-              {/* Checkboxes for featured */}
-              <div className="flex flex-wrap gap-4 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-[#1C1C1C]">
-                  <input
-                    type="checkbox"
-                    checked={prodIsFeatured}
-                    onChange={(e) => setProdIsFeatured(e.target.checked)}
-                    className="accent-[#1E5128] w-4 h-4 rounded"
-                  />
-                  <span>Mostrar en Productos Destacados (Inicio)</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-[#1C1C1C]">
-                  <input
-                    type="checkbox"
-                    checked={prodIsNew}
-                    onChange={(e) => setProdIsNew(e.target.checked)}
-                    className="accent-[#1E5128] w-4 h-4 rounded"
-                  />
-                  <span>Mostrar en Nuevos Productos</span>
-                </label>
-              </div>
-
-              {/* Modal Buttons */}
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#EAE3D5]">
                 <button
                   type="button"
                   onClick={() => setShowProductModal(false)}
-                  className="px-4 py-2 border border-[#DDD5C7] rounded-xl text-[#4A4A4A]"
+                  className="w-9 h-9 rounded-full bg-stone-200/70 hover:bg-stone-300 text-stone-600 hover:text-stone-900 flex items-center justify-center transition-all cursor-pointer"
+                  title="Cerrar ventana"
                 >
-                  Cancelar
+                  <X className="w-5 h-5" />
                 </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-[#1E5128] text-white rounded-xl font-semibold hover:bg-[#163E1F] shadow-md"
-                >
-                  {editingProduct ? 'Actualizar Producto' : 'Guardar y Publicar en Tienda'}
-                </button>
+              </div>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleSaveProduct} onPaste={handleProductModalPaste} className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6 text-xs">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* LEFT COLUMN: FOTOGRAFÍA, STUDIO & SIMULADOR DE TIENDA (5 COLS) */}
+                <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-0">
+                  
+                  {/* Image Studio Box */}
+                  <div className="p-4 sm:p-5 bg-white rounded-3xl border border-[#E8E1D5] shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-[#1E5128]" />
+                        <span className="font-bold text-[#1C1C1C] text-sm">Fotografía de la Prenda</span>
+                      </div>
+                      
+                      {/* Image Mode Tabs */}
+                      <div className="flex p-0.5 bg-stone-100 rounded-xl border border-stone-200 text-[10px] font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setImageInputMode('upload')}
+                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                            imageInputMode === 'upload'
+                              ? 'bg-[#1E5128] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-stone-900'
+                          }`}
+                        >
+                          Subir / Pegar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImageInputMode('url')}
+                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                            imageInputMode === 'url'
+                              ? 'bg-[#1E5128] text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-stone-900'
+                          }`}
+                        >
+                          URL Web
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Image Dropzone / Visual Preview Area */}
+                    <div
+                      onDragOver={handleDragOverProductImage}
+                      onDragLeave={handleDragLeaveProductImage}
+                      onDrop={handleDropProductImage}
+                      className={`relative rounded-2xl transition-all overflow-hidden border-2 ${
+                        dragActive
+                          ? 'border-[#1E5128] bg-emerald-50/70 scale-[1.01] shadow-lg ring-4 ring-emerald-500/20'
+                          : 'border-dashed border-[#DDD5C7] hover:border-[#1E5128]/60 bg-stone-50/60'
+                      }`}
+                    >
+                      {/* Loading Overlay */}
+                      {isUploadingImage && (
+                        <div className="absolute inset-0 z-30 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 p-4 text-center">
+                          <RefreshCw className="w-8 h-8 text-[#1E5128] animate-spin" />
+                          <span className="font-bold text-xs text-[#1E5128]">Optimizando y guardando imagen...</span>
+                          <span className="text-[10px] text-stone-500">Generando versión de alta fidelidad para el catálogo</span>
+                        </div>
+                      )}
+
+                      {prodImage ? (
+                        <div className="relative group aspect-4/5 bg-stone-100 flex items-center justify-center overflow-hidden">
+                          <img
+                            src={prodImage}
+                            alt="Prenda Upcycled"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+                            <span className="self-start px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-xs border border-white/20">
+                              ✓ Imagen lista
+                            </span>
+                            <div className="flex items-center gap-2 self-end">
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-3 py-1.5 bg-white text-stone-800 rounded-xl font-bold text-[11px] shadow-md hover:bg-stone-100 transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <Upload className="w-3.5 h-3.5 text-[#1E5128]" /> Cambiar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setProdImage('')}
+                                className="p-1.5 bg-rose-600 text-white rounded-xl shadow-md hover:bg-rose-700 transition-all cursor-pointer"
+                                title="Eliminar imagen"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-3 min-h-[220px]">
+                          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#1E5128] border border-emerald-100 flex items-center justify-center shadow-xs">
+                            <ImagePlus className="w-7 h-7 text-[#1E5128]" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-[#1C1C1C]">
+                              Pega una imagen con <span className="text-[#C85A2A]">Ctrl+V</span>
+                            </p>
+                            <p className="text-[11px] text-stone-500 mt-0.5">
+                              o arrastra una foto aquí desde tu computadora
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="px-3.5 py-1.5 bg-[#1E5128] text-white rounded-xl font-bold text-xs hover:bg-[#163E1F] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Upload className="w-3.5 h-3.5" /> Subir archivo
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleClipboardPasteButtonClick}
+                              className="px-3 py-1.5 bg-white text-stone-700 border border-stone-300 rounded-xl font-bold text-xs hover:bg-stone-50 transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <ClipboardPaste className="w-3.5 h-3.5 text-[#C85A2A]" /> Pegar portapapeles
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-stone-400">
+                            Soporta PNG, JPG, WEBP, GIF hasta 15MB
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hidden file input */}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleUploadProductImageFile(e.target.files[0]);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    {/* URL Input Box (visible if tab is URL or as fallback) */}
+                    {imageInputMode === 'url' && (
+                      <div className="space-y-1.5 pt-1 animate-fade-in">
+                        <label className="font-bold text-stone-700 text-[11px] flex items-center justify-between">
+                          <span>URL directa de la fotografía:</span>
+                          {prodImage && (
+                            <button
+                              type="button"
+                              onClick={() => setProdImage('')}
+                              className="text-[10px] text-rose-600 hover:underline cursor-pointer"
+                            >
+                              Limpiar
+                            </button>
+                          )}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="url"
+                            placeholder="https://images.unsplash.com/..."
+                            value={prodImage}
+                            onChange={(e) => setProdImage(e.target.value)}
+                            className="w-full p-2.5 pr-8 bg-stone-50 border border-[#DDD5C7] rounded-xl text-xs outline-none focus:border-[#1E5128] focus:bg-white"
+                          />
+                          {prodImage && (
+                            <a
+                              href={prodImage}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                              title="Abrir imagen"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Live Simulation Card: "Cómo se verá en la tienda" */}
+                  <div className="p-4 bg-gradient-to-br from-[#FDFBF7] to-[#F5EFE6] rounded-3xl border border-[#E6DDD0] shadow-xs space-y-3">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-stone-600">
+                      <span className="flex items-center gap-1.5 text-[#1E5128]">
+                        <Eye className="w-3.5 h-3.5" /> Vista Previa en Catálogo
+                      </span>
+                      <span className="text-[10px] font-mono text-stone-400">Simulación real</span>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-3 border border-stone-200/80 shadow-xs flex gap-3 items-center">
+                      <div className="w-16 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200 relative">
+                        {prodImage ? (
+                          <img src={prodImage} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-stone-300">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
+                        {prodDiscountPercent > 0 && (
+                          <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-black px-1 rounded-sm">
+                            -{prodDiscountPercent}%
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[9px] uppercase tracking-wider font-extrabold text-[#7A746B]">
+                            {categories.find(c => c.id === prodCategory)?.name || 'Upcycled'}
+                          </span>
+                          {prodBadge && (
+                            <span className="px-1.5 py-0.2 bg-amber-100 text-[#C85A2A] rounded font-bold text-[8px]">
+                              {prodBadge}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-xs text-[#1C1C1C] truncate">
+                          {prodName || 'Título de la prenda'}
+                        </h4>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="font-black text-sm text-[#1E5128]">
+                            Bs. {prodPrice || 0}
+                          </span>
+                          {prodOriginalPrice && Number(prodOriginalPrice) > prodPrice && (
+                            <span className="line-through text-[10px] text-stone-400">
+                              Bs. {prodOriginalPrice}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[9px] text-stone-500">
+                          {prodTransformation || 'Proceso'} · {prodMaterial || 'Material'} · {prodSize || 'Talla'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* RIGHT COLUMN: DATOS, PRECIOS, FICHA TÉCNICA (7 COLS) */}
+                <div className="lg:col-span-7 space-y-5">
+                  
+                  {/* SECCIÓN 1: IDENTIDAD Y CATEGORIZACIÓN */}
+                  <div className="p-5 bg-white rounded-3xl border border-[#E8E1D5] shadow-xs space-y-4">
+                    <div className="flex items-center gap-2 pb-1 border-b border-stone-100">
+                      <Tag className="w-4 h-4 text-[#1E5128]" />
+                      <span className="font-bold text-xs uppercase tracking-wider text-stone-800">
+                        1. Identidad de la Prenda & Categorización
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-stone-800 text-[11px] block">
+                          Nombre del Producto: <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: Mochila Denim Revival"
+                          value={prodName}
+                          onChange={(e) => setProdName(e.target.value)}
+                          className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs font-semibold text-stone-800 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-stone-800 text-[11px] block">
+                          Categoría en Catálogo: <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={prodCategory}
+                          onChange={(e) => setProdCategory(Number(e.target.value))}
+                          className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs font-semibold text-stone-800 transition-all cursor-pointer"
+                        >
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Badge / Distintivo selector pills */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="font-bold text-stone-800 text-[11px] block">
+                        Insignia / Distintivo Comercial (Badge):
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: 'Sin distintivo', value: '' },
+                          { label: '🔥 Más vendido', value: 'Más vendido' },
+                          { label: '⭐ Edición limitada', value: 'Edición limitada' },
+                          { label: '🌿 100% Upcycled', value: '100% Upcycled' },
+                          { label: '✨ Nuevo', value: 'Nuevo' },
+                          { label: '⚡ ¡Últimas!', value: '¡Últimas!' },
+                        ].map((b) => (
+                          <button
+                            key={b.label}
+                            type="button"
+                            onClick={() => setProdBadge(b.value)}
+                            className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+                              prodBadge === b.value
+                                ? 'bg-[#C85A2A] text-white shadow-xs scale-102 ring-2 ring-orange-300'
+                                : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200'
+                            }`}
+                          >
+                            {b.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECCIÓN 2: FORMULARIO DE PRECIOS, DESCUENTOS % & OFERTAS */}
+                  <div className="p-5 bg-gradient-to-br from-white via-white to-amber-50/40 rounded-3xl border border-[#E8E1D5] shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-1 border-b border-stone-100">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-[#C85A2A]" />
+                        <span className="font-bold text-xs uppercase tracking-wider text-stone-800">
+                          2. Precios, Descuentos (%) & Ofertas Especiales
+                        </span>
+                      </div>
+                      {prodDiscountPercent > 0 && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r from-red-600 to-[#C85A2A] shadow-xs animate-pulse">
+                          🔥 -{prodDiscountPercent}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      {/* Precio de venta */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-[#1C1C1C] text-[11px] block">
+                          Precio Venta (Bs.): *
+                        </label>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          required
+                          placeholder="0"
+                          value={prodPrice}
+                          onChange={(e) => handleSalePriceChangeInput(e.target.value)}
+                          className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl font-black text-base text-[#1E5128] outline-none focus:border-[#1E5128] focus:ring-2 focus:ring-emerald-100"
+                        />
+                      </div>
+
+                      {/* % Descuento */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-[#C85A2A] text-[11px] block">
+                          % Descuento Directo:
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            max="90"
+                            placeholder="0"
+                            value={prodDiscountPercent}
+                            onChange={(e) => handleApplyDiscountPercent(e.target.value)}
+                            className="w-full p-2.5 pr-8 bg-amber-50/50 border border-amber-300 rounded-xl font-black text-base text-[#C85A2A] outline-none focus:border-[#C85A2A]"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-amber-700 text-xs">%</span>
+                        </div>
+                      </div>
+
+                      {/* Precio Original Tachado */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-[#7A746B] text-[11px] block">
+                          Precio Original (Bs.):
+                        </label>
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          placeholder="0"
+                          value={prodOriginalPrice}
+                          onChange={(e) => handleOriginalPriceChangeInput(e.target.value)}
+                          className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl font-bold text-sm text-[#7A746B] outline-none"
+                        />
+                      </div>
+
+                      {/* Stock */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-[#1C1C1C] text-[11px] block">
+                          Stock Disponible (Uds): *
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          required
+                          placeholder="1"
+                          value={prodStock}
+                          onChange={(e) => setProdStock(e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-[#DDD5C7] rounded-xl outline-none font-black text-sm text-[#1C1C1C] focus:border-[#1E5128]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Discount Percentage Pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[10px] font-bold text-[#7A746B] mr-1">Aplicar % rápido:</span>
+                      {[
+                        { label: 'Sin oferta', value: 0 },
+                        { label: '-10%', value: 10 },
+                        { label: '-15%', value: 15 },
+                        { label: '-20%', value: 20 },
+                        { label: '-25%', value: 25 },
+                        { label: '-30%', value: 30 },
+                        { label: '-50%', value: 50 },
+                      ].map((p) => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => handleApplyDiscountPercent(p.value)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                            Number(prodDiscountPercent) === p.value
+                              ? 'bg-[#C85A2A] text-white shadow-xs scale-105 ring-2 ring-orange-300'
+                              : 'bg-stone-100 hover:bg-amber-100 text-stone-700 border border-stone-200'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Live Offer Preview Banner */}
+                    {prodOriginalPrice && Number(prodOriginalPrice) > prodPrice ? (
+                      <div className="p-3 bg-gradient-to-r from-amber-50 via-emerald-50/50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-[#1E5128] font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-[#C85A2A] text-white text-[10px] font-black rounded-md uppercase tracking-wider shadow-2xs">
+                            🔥 Oferta confirmada
+                          </span>
+                          <span>El cliente ahorrará <strong className="text-[#C85A2A]">Bs. {(Number(prodOriginalPrice) - prodPrice).toFixed(0)}</strong> ({Math.round(((Number(prodOriginalPrice) - prodPrice) / Number(prodOriginalPrice)) * 100)}% de descuento)</span>
+                        </div>
+                        <div className="text-[11px] font-mono text-stone-600 shrink-0">
+                          Bs. <span className="line-through text-stone-400">{Number(prodOriginalPrice).toFixed(0)}</span> ➔ <strong className="text-[#1E5128] text-xs">Bs. {prodPrice}</strong>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200 text-[11px] text-[#7A746B] italic">
+                        Sin descuento aplicado. Ingresa un % o precio original superior al precio de venta para activar el badge de oferta en el catálogo.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECCIÓN 3: FICHA TÉCNICA & TRAZABILIDAD RF-015 */}
+                  <div className="p-5 bg-white rounded-3xl border border-[#E8E1D5] shadow-xs space-y-4">
+                    <div className="flex items-center gap-2 pb-1 border-b border-stone-100">
+                      <Leaf className="w-4 h-4 text-[#1E5128]" />
+                      <span className="font-bold text-xs uppercase tracking-wider text-stone-800">
+                        3. Ficha Técnica & Historia de Trazabilidad (RF-015)
+                      </span>
+                    </div>
+
+                    {/* Size Selector with Modern Pills */}
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-stone-800 text-[11px] block">
+                        Talla Disponible:
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Talla única'].map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setProdSize(s)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                              prodSize === s
+                                ? 'bg-[#1E5128] text-white shadow-xs scale-102 ring-2 ring-emerald-300'
+                                : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Material, Color & Process */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="font-bold text-stone-800 text-[11px] block">Material Predominante:</label>
+                        <select
+                          value={prodMaterial}
+                          onChange={(e) => setProdMaterial(e.target.value)}
+                          className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs font-semibold cursor-pointer"
+                        >
+                          <option value="">Seleccionar material...</option>
+                          {['Denim', 'Algodón', 'Lana', 'Mezcla', 'Poliéster', 'Lino', 'Cuero vegano'].map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-stone-800 text-[11px] block">Color / Tonalidad:</label>
+                        <input
+                          type="text"
+                          value={prodColor}
+                          onChange={(e) => setProdColor(e.target.value)}
+                          placeholder="Ej: Azul Índigo, Negro..."
+                          className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs font-semibold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-stone-800 text-[11px] block">Proceso de Upcycling:</label>
+                        <select
+                          value={prodTransformation}
+                          onChange={(e) => setProdTransformation(e.target.value)}
+                          className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs font-semibold cursor-pointer"
+                        >
+                          <option value="">Seleccionar proceso...</option>
+                          {['Transformado', 'Innovado', 'Reutilizado'].map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Origin Story / Traceability (RF-015) */}
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-stone-800 text-[11px] flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Recycle className="w-3.5 h-3.5 text-[#1E5128]" /> Historia de Origen / Trazabilidad (RF-015):
+                        </span>
+                        <span className="text-[10px] text-stone-400">Impacto ambiental visible</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Confeccionada con prendas reutilizadas..."
+                        value={prodStory}
+                        onChange={(e) => setProdStory(e.target.value)}
+                        className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs text-stone-800 font-medium"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-stone-800 text-[11px] block">
+                        Descripción Completa para la Tienda:
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={prodDesc}
+                        onChange={(e) => setProdDesc(e.target.value)}
+                        placeholder="Describe los detalles de la prenda, cuidados y materiales..."
+                        className="w-full p-2.5 bg-stone-50 border border-[#DDD5C7] rounded-xl outline-none focus:border-[#1E5128] focus:bg-white text-xs text-stone-800"
+                      />
+                    </div>
+                  </div>
+
+                  {/* SECCIÓN 4: VISIBILIDAD & CANALES DE VENTA */}
+                  <div className="p-4 bg-white rounded-3xl border border-[#E8E1D5] shadow-xs">
+                    <span className="font-bold text-[11px] uppercase tracking-wider text-stone-700 block mb-2.5">
+                      4. Visibilidad en Tienda & Secciones Especiales
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-center gap-3 p-3 rounded-2xl border border-stone-200 hover:border-[#1E5128]/50 bg-stone-50/60 cursor-pointer transition-all">
+                        <input
+                          type="checkbox"
+                          checked={prodIsFeatured}
+                          onChange={(e) => setProdIsFeatured(e.target.checked)}
+                          className="accent-[#1E5128] w-4 h-4 rounded cursor-pointer"
+                        />
+                        <div>
+                          <p className="font-bold text-xs text-stone-800">Productos Destacados</p>
+                          <p className="text-[10px] text-stone-500">Aparecer en carrusel de Inicio</p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3 rounded-2xl border border-stone-200 hover:border-[#1E5128]/50 bg-stone-50/60 cursor-pointer transition-all">
+                        <input
+                          type="checkbox"
+                          checked={prodIsNew}
+                          onChange={(e) => setProdIsNew(e.target.checked)}
+                          className="accent-[#1E5128] w-4 h-4 rounded cursor-pointer"
+                        />
+                        <div>
+                          <p className="font-bold text-xs text-stone-800">Nuevos Ingresos</p>
+                          <p className="text-[10px] text-stone-500">Destacar en sección de Novedades</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Bottom Sticky Action Footer */}
+              <div className="pt-4 border-t border-[#EAE3D5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FCFAF6] sticky bottom-0 -mx-5 -mb-5 sm:-mx-8 sm:-mb-8 p-5 sm:px-8 border-b-0 shadow-lg">
+                <div className="text-[11px] text-stone-500 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>{editingProduct ? 'Modificando prenda existente' : 'Nueva prenda lista para catálogo comercial'}</span>
+                </div>
+
+                <div className="flex items-center gap-2.5 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowProductModal(false)}
+                    className="px-5 py-2.5 border border-[#DDD5C7] rounded-xl text-stone-700 font-bold hover:bg-stone-100 transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUploadingImage}
+                    className="px-7 py-2.5 bg-gradient-to-r from-[#1E5128] to-[#163E1F] hover:from-[#163E1F] hover:to-[#0F2B15] text-white rounded-xl font-bold text-xs shadow-lg hover:shadow-emerald-900/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{editingProduct ? 'Actualizar Producto' : 'Guardar y Publicar en Tienda'}</span>
+                  </button>
+                </div>
               </div>
 
             </form>

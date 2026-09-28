@@ -16,6 +16,10 @@ export default defineConfig({
         target: process.env.VITE_API_TARGET || 'http://nginx:80',
         changeOrigin: true,
       },
+      '/uploads': {
+        target: process.env.VITE_API_TARGET || 'http://nginx:80',
+        changeOrigin: true,
+      },
     },
   },
   build: {

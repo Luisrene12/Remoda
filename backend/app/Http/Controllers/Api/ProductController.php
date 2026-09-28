@@ -26,13 +26,20 @@ class ProductController extends Controller
             $query = Product::with(['category', 'images', 'primaryImage'])
                 ->where('is_active', true);
 
-            // Filter by category
+            // Filter by category (RF-010, RF-012)
             if ($request->filled('category') && strtolower($request->category) !== 'todas') {
                 $catParam = strtolower(trim($request->category));
-                $query->whereHas('category', function ($q) use ($catParam) {
-                    $q->whereRaw('LOWER(slug) = ?', [$catParam])
-                      ->orWhereRaw('LOWER(name) = ?', [$catParam])
-                      ->orWhere('id', $catParam);
+                $query->where(function ($sq) use ($catParam) {
+                    if (is_numeric($catParam)) {
+                        $sq->where('category_id', intval($catParam));
+                    }
+                    $method = is_numeric($catParam) ? 'orWhereHas' : 'whereHas';
+                    $sq->$method('category', function ($q) use ($catParam) {
+                        $q->whereRaw('LOWER(slug) = ?', [$catParam])
+                          ->orWhereRaw('LOWER(name) = ?', [$catParam])
+                          ->orWhereRaw('LOWER(slug) LIKE ?', ["%{$catParam}%"])
+                          ->orWhereRaw('LOWER(name) LIKE ?', ["%{$catParam}%"]);
+                    });
                 });
             }
 
@@ -154,6 +161,8 @@ class ProductController extends Controller
             ]);
         }
 
+        Cache::flush();
+
         return response()->json([
             'message' => 'Producto creado con éxito',
             'product' => $product->load(['category', 'images']),
@@ -194,6 +203,8 @@ class ProductController extends Controller
             }
         }
 
+        Cache::flush();
+
         return response()->json([
             'message' => 'Producto actualizado correctamente',
             'product' => $product->load(['category', 'images']),
@@ -204,6 +215,7 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->delete();
+        Cache::flush();
         return response()->json(['message' => 'Producto eliminado correctamente']);
     }
 
@@ -306,6 +318,8 @@ class ProductController extends Controller
             'meta_description' => $validated['meta_description'] ?? null,
         ]);
 
+        Cache::flush();
+
         return response()->json([
             'message' => 'Categoría creada con éxito',
             'category' => $category,
@@ -334,6 +348,7 @@ class ProductController extends Controller
         }
 
         $category->update($validated);
+        Cache::flush();
 
         return response()->json([
             'message' => 'Categoría actualizada correctamente',
@@ -345,6 +360,65 @@ class ProductController extends Controller
     {
         $category = Category::findOrFail($id);
         $category->delete();
+        Cache::flush();
         return response()->json(['message' => 'Categoría eliminada']);
+    }
+
+    /**
+     * Upload an image from file or base64 (e.g. pasted directly from clipboard)
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,svg,bmp,avif|max:20480',
+            'image_base64' => 'nullable|string',
+        ]);
+
+        $destinationPath = public_path('uploads/products');
+        if (!file_exists($destinationPath)) {
+            @mkdir($destinationPath, 0777, true);
+        }
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $extension = $file->getClientOriginalExtension() ?: 'jpg';
+            $fileName = 'prod_' . time() . '_' . Str::random(8) . '.' . strtolower($extension);
+            $file->move($destinationPath, $fileName);
+            $url = '/uploads/products/' . $fileName;
+
+            return response()->json([
+                'message' => 'Imagen subida exitosamente',
+                'url' => $url,
+            ]);
+        }
+
+        if (!empty($request->image_base64)) {
+            $base64 = $request->image_base64;
+            $type = 'jpg';
+            if (preg_match('/^data:image\/([a-zA-Z0-9\+\-]+)/', $base64, $match)) {
+                $rawType = strtolower($match[1]);
+                if (str_contains($rawType, 'png')) $type = 'png';
+                elseif (str_contains($rawType, 'webp')) $type = 'webp';
+                elseif (str_contains($rawType, 'gif')) $type = 'gif';
+                elseif (str_contains($rawType, 'svg')) $type = 'svg';
+                else $type = 'jpg';
+            }
+            if (str_contains($base64, 'base64,')) {
+                $base64 = explode('base64,', $base64)[1];
+            }
+            $data = base64_decode($base64);
+            if ($data !== false) {
+                $fileName = 'prod_' . time() . '_' . Str::random(8) . '.' . $type;
+                file_put_contents($destinationPath . '/' . $fileName, $data);
+                $url = '/uploads/products/' . $fileName;
+
+                return response()->json([
+                    'message' => 'Imagen pegada y subida exitosamente',
+                    'url' => $url,
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'No se proporcionó una imagen válida'], 422);
     }
 }

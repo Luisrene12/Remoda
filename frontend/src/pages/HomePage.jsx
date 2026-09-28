@@ -641,14 +641,14 @@ export const HomePage = ({
           
           <div className="lg:col-span-5 aspect-4/3 rounded-3xl overflow-hidden bg-stone-100 shadow-md relative group">
             <img
-              src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80"
-              alt="Tu ropa tiene una segunda vida"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              src="/taller-remoda.jpg"
+              alt="Taller de Creación ReModa — Sostenibilidad Consciente"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 p-3 rounded-2xl bg-white/90 backdrop-blur-md text-xs font-bold text-stone-800 flex items-center gap-2">
-              <Recycle className="w-4 h-4 text-emerald-600 animate-spin" />
-              <span>Programa Oficial de Recolección en Bolivia</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4 p-3 rounded-2xl bg-white/95 backdrop-blur-md text-xs font-bold text-stone-900 flex items-center gap-2 border border-white/40 shadow-lg">
+              <Sparkles className="w-4 h-4 text-[#C85A2A] animate-sparkle" />
+              <span>Taller de Creación ReModa · Confección Artesanal</span>
             </div>
           </div>
 

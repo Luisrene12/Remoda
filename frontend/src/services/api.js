@@ -104,6 +104,26 @@ export const api = {
   createProduct: (data) => apiRequest(`${API_URL}/products`, 'POST', data).then(r => { clearApiCache(); return r; }),
   updateProduct: (id, data) => apiRequest(`${API_URL}/products/${id}`, 'PUT', data).then(r => { clearApiCache(); return r; }),
   deleteProduct: (id) => apiRequest(`${API_URL}/products/${id}`, 'DELETE').then(r => { clearApiCache(); return r; }),
+  uploadImage: async (fileOrBase64) => {
+    if (typeof fileOrBase64 === 'string') {
+      return apiRequest(`${API_URL}/upload-image`, 'POST', { image_base64: fileOrBase64 });
+    }
+    const formData = new FormData();
+    formData.append('image', fileOrBase64);
+    const token = localStorage.getItem('remoda_token');
+    const headers = { Accept: 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_URL}/upload-image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+      throw new Error(err.message || `Error ${res.status}`);
+    }
+    return res.json();
+  },
   addReview: (pid, d) => apiRequest(`${API_URL}/products/${pid}/reviews`, 'POST', d),
 
   // Categories CRUD

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   SlidersHorizontal, 
@@ -19,6 +19,7 @@ import { api } from '../services/api';
 
 const getCategoryIcon = (slugOrName) => {
   const key = String(slugOrName).toLowerCase();
+  if (key.includes('blusa') || key.includes('camisa') || key.includes('top')) return '👚';
   if (key.includes('mochila')) return '🎒';
   if (key.includes('camiseta') || key.includes('polera')) return '👕';
   if (key.includes('jean') || key.includes('pantalon')) return '👖';
@@ -45,6 +46,12 @@ export const CatalogPage = ({
   const [loading, setLoading] = useState(true);
   const [gridCols, setGridCols] = useState(3);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setSelectedCategory(initialCategory);
+    }
+  }, [initialCategory]);
 
   const [categoriesList, setCategoriesList] = useState([
     { id: 'todas', label: 'Todas', icon: '🌟', count: null },
@@ -89,7 +96,8 @@ export const CatalogPage = ({
           const list = [
             { id: 'todas', label: 'Todas', icon: '🌟', count: totalCount },
             ...res.categories.map(c => ({
-              id: c.slug || c.name.toLowerCase(),
+              id: c.slug || String(c.id),
+              slug: c.slug || '',
               label: c.name,
               icon: getCategoryIcon(c.slug || c.name),
               count: c.products_count !== undefined ? c.products_count : null
@@ -136,18 +144,74 @@ export const CatalogPage = ({
 
   const hasActiveFilters = selectedCategory !== 'todas' || selectedMaterial !== 'Todos' || maxPrice < 500 || search.trim() !== '';
 
-  const activeCategory = categoriesList.find(c => c.id === selectedCategory);
+  const activeCategory = categoriesList.find(c => 
+    String(c.id).toLowerCase() === String(selectedCategory).toLowerCase() ||
+    String(c.slug || '').toLowerCase() === String(selectedCategory).toLowerCase() ||
+    String(c.label).toLowerCase() === String(selectedCategory).toLowerCase()
+  );
+
+  const displayedProducts = useMemo(() => {
+    return products.filter((product) => {
+      // 1. Category Filter
+      if (selectedCategory && selectedCategory.toLowerCase() !== 'todas') {
+        const catTarget = selectedCategory.toLowerCase().trim();
+        const prodCatName = (product.category?.name || '').toLowerCase().trim();
+        const prodCatSlug = (product.category?.slug || '').toLowerCase().trim();
+        const prodCatId = String(product.category_id || product.category?.id || '');
+
+        const match = 
+          prodCatId === catTarget ||
+          prodCatName === catTarget ||
+          prodCatSlug === catTarget ||
+          prodCatName.includes(catTarget) ||
+          catTarget.includes(prodCatName) ||
+          (catTarget.endsWith('s') && prodCatName.includes(catTarget.slice(0, -1))) ||
+          (prodCatName.endsWith('s') && catTarget.includes(prodCatName.slice(0, -1)));
+
+        if (!match) return false;
+      }
+
+      // 2. Material Filter
+      if (selectedMaterial && selectedMaterial !== 'Todos') {
+        if ((product.material || '').toLowerCase() !== selectedMaterial.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // 3. Price Filter
+      if (maxPrice && maxPrice < 500) {
+        if (parseFloat(product.price || 0) > maxPrice) {
+          return false;
+        }
+      }
+
+      // 4. Search Filter
+      if (search.trim()) {
+        const q = search.toLowerCase().trim();
+        const matchName = (product.name || '').toLowerCase().includes(q);
+        const matchDesc = (product.description || '').toLowerCase().includes(q);
+        const matchStory = (product.origin_story || '').toLowerCase().includes(q);
+        const matchMat = (product.material || '').toLowerCase().includes(q);
+        const matchCat = (product.category?.name || '').toLowerCase().includes(q);
+        if (!matchName && !matchDesc && !matchStory && !matchMat && !matchCat) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [products, selectedCategory, selectedMaterial, maxPrice, search]);
 
   return (
     <div className="min-h-screen bg-transparent">
 
       {/* ── HERO BANNER ─────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-[#0D1A10] h-72 sm:h-88" style={{ height: '22rem' }}>
-        {/* Ken Burns image */}
+        {/* Ken Burns workshop image */}
         <img
-          src="/hero-bg.jpg"
-          alt="Catálogo ReModa"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40 animate-hero-ken-burns"
+          src="/taller-remoda.jpg"
+          alt="Taller de Creación ReModa — Sostenibilidad Consciente"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-55 animate-hero-ken-burns"
         />
         {/* Layered gradients */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0D1A10]/98 via-[#0D1A10]/75 to-[#0D1A10]/30" />
@@ -160,13 +224,13 @@ export const CatalogPage = ({
         <div className="relative z-10 h-full flex flex-col justify-center max-w-7xl mx-auto px-6 lg:px-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full w-fit mb-4 animate-slide-in-down shadow-xl">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-sparkle" />
-            <span className="text-xs font-bold text-amber-200 tracking-widest uppercase">Colección Circular · {new Date().getFullYear()}</span>
+            <span className="text-xs font-bold text-amber-200 tracking-widest uppercase">Taller de Creación ReModa · Moda Consciente</span>
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight font-serif-remoda animate-fade-in-up">
             Catálogo <span className="text-gradient-gold">Consciente</span>
           </h1>
-          <p className="text-sm sm:text-base text-white/70 mt-3 max-w-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Prendas rediseñadas con historia, calidad artesanal y mínimo impacto ambiental.
+          <p className="text-sm sm:text-base text-white/80 mt-3 max-w-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            Bolsos y prendas únicas confeccionadas a mano en nuestro taller con historia, oficio artesanal y suprareciclaje.
           </p>
 
           {/* Eco pills */}
@@ -301,9 +365,12 @@ export const CatalogPage = ({
               </div>
               <div className="p-3 space-y-1">
                 {categoriesList.map((cat) => {
-                  const isActive = selectedCategory.toLowerCase() === cat.id.toLowerCase();
+                  const isActive = 
+                    String(selectedCategory).toLowerCase() === String(cat.id).toLowerCase() ||
+                    (cat.slug && String(selectedCategory).toLowerCase() === String(cat.slug).toLowerCase()) ||
+                    (cat.label && String(selectedCategory).toLowerCase() === String(cat.label).toLowerCase());
                   return (
-                    <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+                    <button key={cat.id} onClick={() => setSelectedCategory(cat.slug || cat.id)}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 cursor-pointer group ${
                         isActive
                           ? 'bg-gradient-to-r from-[#1E5128] to-emerald-700 text-white shadow-lg shadow-[#1E5128]/25 scale-[1.02]'
@@ -421,7 +488,7 @@ export const CatalogPage = ({
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
                 </span>
                 <span className="text-sm font-bold text-stone-700">
-                  {loading ? 'Buscando prendas...' : `${products.length} ${products.length === 1 ? 'producto' : 'productos'} encontrados`}
+                  {loading ? 'Buscando prendas...' : `${displayedProducts.length} ${displayedProducts.length === 1 ? 'producto' : 'productos'} encontrados`}
                 </span>
               </div>
               {selectedCategory !== 'todas' && (
@@ -446,7 +513,7 @@ export const CatalogPage = ({
                   </div>
                 ))}
               </div>
-            ) : products.length === 0 ? (
+            ) : displayedProducts.length === 0 ? (
               <div className="py-24 px-6 text-center space-y-4 bg-white rounded-3xl border border-stone-200 shadow-sm">
                 <div className="w-20 h-20 mx-auto bg-stone-100 rounded-full flex items-center justify-center text-4xl">🧶</div>
                 <div className="space-y-1">
@@ -463,7 +530,7 @@ export const CatalogPage = ({
               </div>
             ) : (
               <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols === 4 ? 'xl:grid-cols-4' : 'lg:grid-cols-3'} gap-5`}>
-                {products.map((product, idx) => (
+                {displayedProducts.map((product, idx) => (
                   <ProductCard
                     key={product.id}
                     product={product}
